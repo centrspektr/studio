@@ -136,7 +136,7 @@ footer{color:var(--dim);font-size:13px;text-align:center;padding:30px 0 40px;bor
 <body>
 <header><div class="wrap top">
   <a class="back" href="../">← СПЕКТР</a><span class="brand">Гитара · ИИ-студия</span>
-  <nav class="tb" id="tb"><span class="tbi" id="tbi"></span><button data-t="chords" class="on">🎸 Аккорды</button><button data-t="tuner">🎯 Тюнер</button><button data-t="metro">⏱ Метроном</button><button data-t="ai">🤖 Музыка с ИИ</button></nav>
+  <nav class="tb" id="tb"><span class="tbi" id="tbi"></span><button data-t="chords" class="on">🎸 Аккорды</button><button data-t="tuner">🎯 Тюнер</button><button data-t="metro">⏱ Метроном</button><button data-t="ai">🤖 Музыка с ИИ</button><button data-t="rate">🏆 Рейтинг</button></nav>
 </div></header>
 <main class="wrap">
   <section class="hero"><div class="ph"><img src="studio.webp" alt=""></div><canvas id="eq"></canvas>
@@ -185,6 +185,11 @@ footer{color:var(--dim);font-size:13px;text-align:center;padding:30px 0 40px;bor
     </div>
   </div>
 
+  <div class="tab" id="t-rate" hidden>
+    <h2 class="sec">Рейтинг <em>студии</em></h2><p class="sub">Выученные аккорды, рекорд смен и задания педагога - в общий зачёт.</p>
+    <div data-spk-club="studio" style="--spk-a:#ff2d8a;--spk-b:#8b5cf6;--spk-on:#fff;max-width:760px"></div>
+  </div>
+
   <div class="tab" id="t-ai" hidden>
     <h2 class="sec">Музыка <em>с ИИ</em></h2><p class="sub">От идеи до готового трека: нейросеть - помощник, а автор - ты.</p>
     <div class="steps" id="steps"></div>
@@ -210,7 +215,8 @@ const RED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200)}
 let ST={got:[],best:0};try{ST=Object.assign(ST,JSON.parse(ls.get('studio_prog')||'{}'))}catch(e){}
-const saveST=()=>{ls.set('studio_prog',JSON.stringify(ST));$('#stA').textContent=`🎸 выучено ${ST.got.length} ${ST.got.length%10===1&&ST.got.length!==11?'аккорд':[2,3,4].includes(ST.got.length%10)&&![12,13,14].includes(ST.got.length)?'аккорда':'аккордов'}`;$('#stB').textContent='⚡ рекорд смен: '+(ST.best||'-')};
+window.SPK_PROGRESS=()=>({p:ST.got.length*10+Math.min(+ST.best||0,60),b:ST.got.length,l:'🎸 '+ST.got.length+' из 13'});
+const saveST=()=>{ls.set('studio_prog',JSON.stringify(ST));if(window.SPK)SPK.sync();$('#stA').textContent=`🎸 выучено ${ST.got.length} ${ST.got.length%10===1&&ST.got.length!==11?'аккорд':[2,3,4].includes(ST.got.length%10)&&![12,13,14].includes(ST.got.length)?'аккорда':'аккордов'}`;$('#stB').textContent='⚡ рекорд смен: '+(ST.best||'-')};
 
 /* ---------- данные аккордов: от 6-й (бас) к 1-й струне ---------- */
 const CH={
@@ -332,7 +338,8 @@ const FORM=[['Интро','#6366f1'],['Куплет 1','#8b5cf6'],['Припев
 $('#form').innerHTML=FORM.map((f,i)=>`<span style="background:${f[1]};animation-delay:${i*70}ms">${f[0]}</span>`).join('');
 /* ---------- старт ---------- */
 renderChords();renderTrPick();trShow();renderPB();renderMood();saveST();
-const h=location.hash.slice(1);show(['chords','tuner','metro','ai'].includes(h)?h:'chords');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
+const h=location.hash.slice(1);show(['chords','tuner','metro','ai','rate'].includes(h)?h:'chords');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
 </script>
+<script src="/students.js" defer></script>
 </body>
 </html>
