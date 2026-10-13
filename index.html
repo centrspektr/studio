@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Гитара и ИИ-студия - СПЕКТР</title>
+<meta name="description" content="Азы гитары, тренажёр аккордов, тюнер, метроном и создание музыки с помощью ИИ. Ресурсный центр СПЕКТР.">
+<meta name="theme-color" content="#0c0716">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@600;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{--bg:#0c0716;--bg2:#160d27;--card:#150c25;--line:#2c1d47;--text:#f4eefe;--dim:#a99bc4;--pk:#ff2d8a;--cy:#22d3ee;--vi:#8b5cf6;--yl:#facc15;--ok:#22c55e;--bad:#ef4444;--fh:Unbounded,Manrope,sans-serif;--fb:Manrope,'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;overflow-x:clip}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);line-height:1.5;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(60% 40% at 0% 0%,rgba(255,45,138,.14),transparent 70%),radial-gradient(50% 40% at 100% 50%,rgba(34,211,238,.1),transparent 70%)}
+[hidden]{display:none !important}
+a{color:var(--cy)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 18px;border-radius:14px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font:700 14.5px var(--fb);cursor:pointer;text-decoration:none;transition:transform .2s,border-color .2s,box-shadow .3s,background .2s}
+.btn:hover{border-color:var(--pk)} .btn:active{transform:scale(.97)}
+.btn.pri{background:linear-gradient(135deg,var(--pk),var(--vi));border:none;color:#fff;box-shadow:0 8px 26px rgba(255,45,138,.4)}
+.btn.cy{background:linear-gradient(135deg,var(--cy),#3b82f6);border:none;color:#04121b}
+.btn.sm{height:34px;padding:0 12px;font-size:13px;border-radius:10px}
+.muted{color:var(--dim)}
+/* header */
+header{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);background:rgba(12,7,22,.8);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;gap:12px;height:62px}
+.back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--dim);font-weight:700;font-size:14px;padding:7px 12px;border-radius:12px;border:1px solid var(--line)}
+.back:hover{color:#fff;border-color:var(--pk)}
+.brand{font:800 16px var(--fh);background:linear-gradient(90deg,var(--pk),var(--yl),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent}
+nav.tb{margin-left:auto;display:flex;gap:4px;position:relative;padding:4px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+nav.tb button{position:relative;z-index:1;border:none;background:none;color:var(--dim);font:700 13.5px var(--fb);padding:8px 12px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:color .3s}
+nav.tb button.on{color:#fff}
+.tbi{position:absolute;top:4px;bottom:4px;left:4px;border-radius:10px;background:linear-gradient(135deg,var(--pk),var(--vi));box-shadow:0 4px 18px rgba(255,45,138,.45);transition:left .45s cubic-bezier(.5,1.5,.5,1),width .45s cubic-bezier(.5,1.5,.5,1)}
+@media(max-width:860px){.top{flex-wrap:wrap;height:auto;padding:10px 0}nav.tb{order:3;margin-left:0;width:100%}}
+/* hero */
+.hero{position:relative;margin-top:18px;border-radius:28px;overflow:hidden;min-height:400px;display:flex;align-items:flex-end;isolation:isolate;border:1px solid var(--line)}
+.hero .ph{position:absolute;inset:0;z-index:-3}
+.hero .ph img{width:100%;height:100%;object-fit:cover;object-position:50% 35%;animation:hz 20s ease-in-out infinite alternate}
+@keyframes hz{to{transform:scale(1.08)}}
+.hero::before{content:"";position:absolute;inset:0;z-index:-2;background:linear-gradient(0deg,rgba(12,7,22,.95) 10%,rgba(12,7,22,.35) 60%,rgba(12,7,22,.15))}
+.hero canvas{position:absolute;left:0;right:0;bottom:0;height:120px;width:100%;z-index:-1;opacity:.85}
+.hin{padding:28px;max-width:720px}
+.hin small{font-weight:800;letter-spacing:3px;color:var(--yl);font-size:12px}
+.hin h1{font:800 clamp(30px,6vw,60px)/1.05 var(--fh);margin:8px 0;text-shadow:0 0 30px rgba(255,45,138,.6),0 0 60px rgba(139,92,246,.4)}
+.hin h1 span{color:var(--pk);text-shadow:0 0 18px var(--pk),0 0 40px var(--pk);animation:flick 4s infinite}
+@keyframes flick{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.4}94%{opacity:1}96%{opacity:.6}97%{opacity:1}}
+.hin p{color:#ddd3f2;max-width:540px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.stats span{font-size:13px;font-weight:800;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
+/* секции */
+.tab{scroll-margin-top:130px;padding:26px 0 40px;animation:tin .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes tin{from{opacity:0;transform:translateY(16px)}}
+h2.sec{font:800 clamp(22px,4vw,34px)/1.1 var(--fh);margin-bottom:6px}
+h2.sec em{font-style:normal;color:var(--pk)}
+.sub{color:var(--dim);margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px} @media(max-width:860px){.grid2{grid-template-columns:1fr}}
+/* аккорды */
+.chords{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.cc{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 10px 10px;text-align:center;cursor:pointer;transition:transform .25s,border-color .25s,box-shadow .3s;animation:tin .5s backwards}
+.cc:hover{transform:translateY(-4px);border-color:var(--pk);box-shadow:0 12px 30px rgba(255,45,138,.2)}
+.cc.play{animation:pulse .6s}
+@keyframes pulse{30%{transform:scale(1.06);box-shadow:0 0 40px rgba(255,45,138,.6)}}
+.cc b{font:800 20px var(--fh)} .cc small{display:block;color:var(--dim);font-size:11.5px}
+.cc svg{width:100%;max-width:120px;height:auto;margin:4px auto 0;display:block}
+.cc .lr{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--dim);cursor:pointer;font-size:12px}
+.cc.got .lr{background:var(--ok);border-color:var(--ok);color:#fff}
+.cflt{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--bg2);color:var(--dim);border-radius:999px;padding:7px 13px;font:700 13px var(--fb);cursor:pointer;transition:.2s}
+.chip.on{background:linear-gradient(135deg,var(--pk),var(--vi));color:#fff;border-color:transparent}
+/* тренажёр смены аккордов */
+.tr{margin-top:22px}
+.tr-set{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.tr-set label{font-size:13px;color:var(--dim);display:flex;gap:8px;align-items:center}
+.tr-set input[type=range]{accent-color:var(--pk)}
+.tr-stage{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px} @media(max-width:600px){.tr-stage{grid-template-columns:1fr}}
+.big{position:relative;border-radius:22px;padding:18px;text-align:center;background:linear-gradient(160deg,#1e0f36,#120a22);border:1px solid var(--line);min-height:250px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.big .nm{font:800 64px var(--fh);line-height:1;text-shadow:0 0 30px rgba(255,45,138,.6)}
+.big svg{width:140px;margin-top:6px}
+.big.next{opacity:.75} .big.next .nm{font-size:40px;color:var(--cy);text-shadow:0 0 24px rgba(34,211,238,.5)}
+.big small{position:absolute;top:12px;left:16px;font-weight:800;letter-spacing:2px;font-size:11px;color:var(--dim)}
+.beats{display:flex;gap:8px;justify-content:center;margin-top:14px} .beats i{width:16px;height:16px;border-radius:50%;background:var(--line);transition:background .1s,transform .1s} .beats i.on{background:var(--pk);transform:scale(1.35);box-shadow:0 0 14px var(--pk)} .beats i.on.first{background:var(--yl);box-shadow:0 0 14px var(--yl)}
+.ring{position:absolute;inset:0;border-radius:22px;pointer-events:none;box-shadow:inset 0 0 0 3px var(--pk);opacity:0}
+.ring.go{animation:rg .5s}
+@keyframes rg{0%{opacity:1}100%{opacity:0}}
+.strum{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.strum i{font-style:normal;width:40px;height:52px;display:grid;place-items:center;border-radius:12px;background:var(--bg2);border:1px solid var(--line);font-size:24px;font-weight:800;transition:.12s}
+.strum i.on{background:var(--pk);color:#fff;transform:translateY(-4px);box-shadow:0 8px 20px rgba(255,45,138,.5)}
+.strum i.x{color:var(--dim);font-size:16px}
+/* тюнер */
+.tuner{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+.dial{position:relative;width:min(100%,380px);aspect-ratio:2/1.15}
+.dial svg{width:100%;height:100%}
+.note{font:800 72px var(--fh);line-height:1;transition:color .3s}
+.note.ok{color:var(--ok);text-shadow:0 0 30px rgba(34,197,94,.6)}
+.hz{font:700 15px var(--fb);color:var(--dim);font-variant-numeric:tabular-nums}
+.strs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.strs button{width:54px;height:54px;border-radius:16px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font:800 18px var(--fh);cursor:pointer;transition:.2s}
+.strs button small{display:block;font:600 10px var(--fb);color:var(--dim)}
+.strs button.hot{border-color:var(--ok);box-shadow:0 0 18px rgba(34,197,94,.5)}
+/* метроном */
+.met{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.bpm{font:800 84px var(--fh);line-height:1;background:linear-gradient(90deg,var(--pk),var(--yl));-webkit-background-clip:text;background-clip:text;color:transparent}
+.pend{position:relative;width:220px;height:130px}
+.pend i{position:absolute;left:50%;bottom:8px;width:4px;height:116px;margin-left:-2px;border-radius:4px;background:linear-gradient(var(--pk),var(--vi));transform-origin:50% 100%;transform:rotate(-28deg)}
+.pend i::after{content:"";position:absolute;top:18%;left:50%;width:20px;height:20px;margin-left:-10px;border-radius:5px;background:var(--yl);box-shadow:0 0 18px var(--yl)}
+.pend b{position:absolute;left:50%;bottom:0;width:30px;height:16px;margin-left:-15px;border-radius:6px 6px 0 0;background:var(--line)}
+.met input[type=range]{width:min(100%,380px);accent-color:var(--pk)}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.lamp{width:56px;height:56px;border-radius:50%;background:var(--bg2);border:1px solid var(--line);transition:background .06s,box-shadow .06s}
+.lamp.on{background:var(--pk);box-shadow:0 0 40px var(--pk)} .lamp.on.first{background:var(--yl);box-shadow:0 0 40px var(--yl)}
+/* ИИ */
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.st{position:relative;padding:18px;border-radius:20px;background:var(--card);border:1px solid var(--line);overflow:hidden;animation:tin .5s backwards}
+.st .n{position:absolute;right:12px;top:4px;font:800 54px var(--fh);color:transparent;-webkit-text-stroke:1.5px rgba(255,45,138,.35)}
+.st h3{font:700 17px var(--fh);margin-bottom:6px;padding-right:40px} .st p,.st li{font-size:14px;color:#ddd3f2} .st ul{padding-left:18px}
+.pb{display:grid;gap:12px}
+.pb .grp b{display:block;font-size:13px;color:var(--dim);margin-bottom:6px}
+.pb .opts{display:flex;gap:6px;flex-wrap:wrap}
+.out{position:relative;margin-top:14px;padding:16px;border-radius:16px;background:#0a0613;border:1px solid var(--line);font:600 15px ui-monospace,Consolas,monospace;color:#b9f6ff;min-height:70px;white-space:pre-wrap;word-break:break-word}
+.form{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.form span{padding:10px 14px;border-radius:12px;font-weight:800;font-size:13px;color:#fff;animation:tin .4s backwards}
+.prog{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.prog .pc{flex:1;min-width:70px;padding:14px 8px;border-radius:16px;text-align:center;background:var(--bg2);border:1px solid var(--line);font:800 26px var(--fh);transition:.15s}
+.prog .pc small{display:block;font:600 11px var(--fb);color:var(--dim)}
+.prog .pc.on{background:linear-gradient(135deg,var(--pk),var(--vi));border-color:transparent;transform:translateY(-4px) scale(1.04);box-shadow:0 10px 26px rgba(255,45,138,.45)}
+.warn{margin-top:12px;padding:12px 14px;border-radius:14px;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.3);font-size:14px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,30px);opacity:0;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:700;transition:.3s;z-index:500;pointer-events:none} #toast.on{opacity:1;transform:translate(-50%,0)}
+footer{color:var(--dim);font-size:13px;text-align:center;padding:30px 0 40px;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<header><div class="wrap top">
+  <a class="back" href="../">← СПЕКТР</a><span class="brand">Гитара · ИИ-студия</span>
+  <nav class="tb" id="tb"><span class="tbi" id="tbi"></span><button data-t="chords" class="on">🎸 Аккорды</button><button data-t="tuner">🎯 Тюнер</button><button data-t="metro">⏱ Метроном</button><button data-t="ai">🤖 Музыка с ИИ</button></nav>
+</div></header>
+<main class="wrap">
+  <section class="hero"><div class="ph"><img src="studio.webp" alt=""></div><canvas id="eq"></canvas>
+    <div class="hin"><small>РЕСУРСНЫЙ ЦЕНТР СПЕКТР</small><h1>Гитара и <span>ИИ</span>-студия</h1><p>Учим аккорды, настраиваем гитару, держим ритм и создаём свои треки вместе с нейросетями.</p>
+      <div class="stats"><span id="stA">🎸 выучено 0 аккордов</span><span id="stB">⚡ рекорд смен: -</span></div></div></section>
+
+  <div class="tab" id="t-chords">
+    <h2 class="sec">Аккорды <em>для старта</em></h2><p class="sub">Нажми на аккорд - он прозвучит. Отметь ✓, когда выучишь. Цифры на схеме - номера пальцев левой руки.</p>
+    <div class="cflt" id="cflt"></div>
+    <div class="chords" id="chords"></div>
+    <div class="card tr">
+      <h2 class="sec" style="font-size:24px">Тренажёр <em>смены аккордов</em></h2>
+      <p class="muted">Упражнение "минута смен": выбери аккорды и темп. Меняй аккорд на первый счёт - сначала медленно, потом быстрее.</p>
+      <div class="tr-set"><div class="cflt" id="trPick" style="margin:0"></div></div>
+      <div class="tr-set"><label>Темп <input type="range" id="trBpm" min="40" max="140" value="60"> <b id="trBpmV">60</b> уд/мин</label><label>Тактов на аккорд <select id="trBars" class="chip"><option>1</option><option selected>2</option><option>4</option></select></label><label><input type="checkbox" id="trSnd" checked> звук аккорда</label></div>
+      <div class="tr-set"><span class="muted" style="font-size:13px">Бой:</span><div class="cflt" id="strumPick" style="margin:0"></div></div>
+      <div class="tr-stage"><div class="big" id="bNow"><small>СЕЙЧАС</small><div class="nm" id="nowN">Am</div><div id="nowD"></div><div class="beats" id="beats"></div><div class="ring" id="ring"></div></div>
+        <div class="big next"><small>ДАЛЬШЕ</small><div class="nm" id="nextN">C</div><div id="nextD"></div><div class="strum" id="strum"></div></div></div>
+      <div class="row" style="margin-top:14px"><button class="btn pri" id="trGo">▶ Старт</button><span class="muted" id="trInfo" style="align-self:center">Смен: 0</span></div>
+    </div>
+  </div>
+
+  <div class="tab" id="t-tuner" hidden>
+    <h2 class="sec">Тюнер <em>гитары</em></h2><p class="sub">Стандартный строй: E A D G B E. Разреши доступ к микрофону и дёрни одну струну.</p>
+    <div class="grid2"><div class="card tuner">
+      <div class="dial"><svg viewBox="0 0 200 115"><defs><linearGradient id="dg" x1="0" x2="1"><stop offset="0" stop-color="#ef4444"/><stop offset=".42" stop-color="#facc15"/><stop offset=".5" stop-color="#22c55e"/><stop offset=".58" stop-color="#facc15"/><stop offset="1" stop-color="#ef4444"/></linearGradient></defs>
+        <path d="M15 105 A85 85 0 0 1 185 105" fill="none" stroke="url(#dg)" stroke-width="10" stroke-linecap="round" opacity=".85"/>
+        <g id="ticks"></g><line id="needle" x1="100" y1="105" x2="100" y2="28" stroke="#fff" stroke-width="3" stroke-linecap="round" style="transition:transform .15s;transform-origin:100px 105px"/><circle cx="100" cy="105" r="7" fill="#ff2d8a"/></svg></div>
+      <div class="note" id="tNote">-</div><div class="hz" id="tHz">нажми "Включить тюнер"</div>
+      <div class="row"><button class="btn pri" id="tOn">🎙 Включить тюнер</button></div>
+    </div><div class="card">
+      <h3 style="font:700 18px var(--fh);margin-bottom:8px">Эталонные звуки</h3><p class="muted" style="font-size:14px;margin-bottom:12px">Нажми на струну - прозвучит нота, подстрой гитару на слух.</p>
+      <div class="strs" id="strs"></div>
+      <div class="warn">💡 Крути колок медленно. Если стрелка слева - звук ниже нужного, подтяни струну. Справа - ослабь.</div>
+    </div></div>
+  </div>
+
+  <div class="tab" id="t-metro" hidden>
+    <h2 class="sec">Метроном</h2><p class="sub">Держи ритм. Первая доля подсвечивается жёлтым. Нажимай "Тап" в такт песне - узнаешь её темп.</p>
+    <div class="card met">
+      <div class="pend"><i id="pend"></i><b></b></div><div class="bpm" id="mBpm">90</div><div class="muted" id="mName">Andante - спокойно</div>
+      <input type="range" id="mRange" min="40" max="208" value="90">
+      <div class="row"><button class="btn sm" data-d="-5">-5</button><button class="btn sm" data-d="-1">-1</button><button class="btn sm" data-d="1">+1</button><button class="btn sm" data-d="5">+5</button></div>
+      <div class="row" id="mSig"></div><div class="row" id="lamps"></div>
+      <div class="row"><button class="btn pri" id="mGo">▶ Старт</button><button class="btn cy" id="mTap">👆 Тап</button></div>
+    </div>
+  </div>
+
+  <div class="tab" id="t-ai" hidden>
+    <h2 class="sec">Музыка <em>с ИИ</em></h2><p class="sub">От идеи до готового трека: нейросеть - помощник, а автор - ты.</p>
+    <div class="steps" id="steps"></div>
+    <div class="grid2" style="margin-top:18px">
+      <div class="card"><h3 style="font:700 18px var(--fh);margin-bottom:10px">🎛 Конструктор промпта для музыки</h3>
+        <div class="pb" id="pb"></div><div class="out" id="pOut"></div>
+        <div class="row" style="justify-content:flex-start;margin-top:10px"><button class="btn pri sm" id="pCopy">📋 Скопировать</button><button class="btn sm" id="pRand">🎲 Случайно</button></div>
+        <p class="muted" style="font-size:13px;margin-top:8px">Музыкальные нейросети (например, Suno) лучше понимают описание стиля на английском, поэтому промпт собирается по-английски. Текст песни пиши сам по-русски.</p></div>
+      <div class="card"><h3 style="font:700 18px var(--fh);margin-bottom:10px">🎹 Генератор аккордов для песни</h3>
+        <p class="muted" style="font-size:14px">Выбери настроение - получишь последовательность аккордов, которую можно сыграть на гитаре и положить в основу трека.</p>
+        <div class="cflt" id="moodPick" style="margin-top:10px"></div><div class="prog" id="prog"></div>
+        <div class="row" style="justify-content:flex-start"><button class="btn pri sm" id="pPlay">▶ Сыграть</button><button class="btn sm" id="pNew">🎲 Другая</button></div>
+        <h3 style="font:700 16px var(--fh);margin:18px 0 6px">🧱 Структура песни</h3><div class="form" id="form"></div></div>
+    </div>
+    <div class="warn">⚖ Авторские права: не загружай в нейросеть чужие песни и тексты и не подделывай голоса известных артистов. Права на сгенерированный трек зависят от правил сервиса и тарифа - прочитай их до публикации.</div>
+  </div>
+</main>
+<footer>Гитара и ИИ-студия · ресурсный центр "СПЕКТР" · Иртышское поселение</footer>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const RED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200)}
+let ST={got:[],best:0};try{ST=Object.assign(ST,JSON.parse(ls.get('studio_prog')||'{}'))}catch(e){}
+const saveST=()=>{ls.set('studio_prog',JSON.stringify(ST));$('#stA').textContent=`🎸 выучено ${ST.got.length} ${ST.got.length%10===1&&ST.got.length!==11?'аккорд':[2,3,4].includes(ST.got.length%10)&&![12,13,14].includes(ST.got.length)?'аккорда':'аккордов'}`;$('#stB').textContent='⚡ рекорд смен: '+(ST.best||'-')};
+
+/* ---------- данные аккордов: от 6-й (бас) к 1-й струне ---------- */
+const CH={
+ 'Am':{f:'x02210',p:'x02310',g:'Минор',d:'ля минор'},'C':{f:'x32010',p:'x32010',g:'Мажор',d:'до мажор'},'D':{f:'xx0232',p:'xx0132',g:'Мажор',d:'ре мажор'},
+ 'Dm':{f:'xx0231',p:'xx0231',g:'Минор',d:'ре минор'},'E':{f:'022100',p:'023100',g:'Мажор',d:'ми мажор'},'Em':{f:'022000',p:'023000',g:'Минор',d:'ми минор'},
+ 'G':{f:'320003',p:'210003',g:'Мажор',d:'соль мажор'},'A':{f:'x02220',p:'x01230',g:'Мажор',d:'ля мажор'},'A7':{f:'x02020',p:'x02030',g:'Септаккорды',d:'ля септаккорд'},
+ 'E7':{f:'020100',p:'020100',g:'Септаккорды',d:'ми септаккорд'},'D7':{f:'xx0212',p:'xx0213',g:'Септаккорды',d:'ре септаккорд'},
+ 'F':{f:'xx3211',p:'xx3211',g:'Мажор',d:'фа мажор (упрощённый)'},'Hm':{f:'x24432',p:'x13421',g:'Минор',d:'си минор (баррэ)',b:2}};
+const OPEN=[82.41,110,146.83,196,246.94,329.63], SN=['E','A','D','G','B','E'];
+function svgChord(name,small){const c=CH[name],f=c.f.split(''),p=c.p.split(''),nums=f.filter(x=>x!=='x').map(Number).filter(n=>n>0),base=c.b&&Math.min(...nums)>1?c.b:1,W=110,H=128,x0=18,dx=(W-36)/5,y0=26,dy=22;
+  let s=`<svg viewBox="0 0 ${W} ${H}" aria-label="${name}">`;
+  s+=base===1?`<rect x="${x0-1}" y="${y0-4}" width="${dx*5+2}" height="4" rx="1.5" fill="#f4eefe"/>`:`<text x="4" y="${y0+dy*.7}" fill="#a99bc4" font-size="11" font-weight="700">${base}</text>`;
+  for(let i=0;i<5;i++)s+=`<line x1="${x0}" x2="${x0+dx*5}" y1="${y0+dy*i}" y2="${y0+dy*i}" stroke="#4a3a6a" stroke-width="1.2"/>`;
+  for(let i=0;i<6;i++)s+=`<line x1="${x0+dx*i}" x2="${x0+dx*i}" y1="${y0}" y2="${y0+dy*4}" stroke="#8a7aa8" stroke-width="${1.6-i*.15}"/>`;
+  const ones=f.map((v,i)=>({v,i,p:p[i]})).filter(o=>o.p==='1'&&o.v!=='x'&&o.v!=='0');let bar=null;
+  if(ones.length>1&&ones.every(o=>o.v===ones[0].v)){bar={fr:+ones[0].v,a:ones[0].i,b:ones[ones.length-1].i};const y=y0+dy*(bar.fr-base+.5);s+=`<rect x="${x0+dx*bar.a-8}" y="${y-8}" width="${dx*(bar.b-bar.a)+16}" height="16" rx="8" fill="#ff2d8a"/><text x="${x0+dx*bar.a}" y="${y+4}" fill="#fff" font-size="10.5" font-weight="800" text-anchor="middle">1</text>`}
+  f.forEach((v,i)=>{const x=x0+dx*i;if(v==='x')s+=`<text x="${x}" y="${y0-8}" fill="#ef4444" font-size="13" font-weight="800" text-anchor="middle">×</text>`;else if(v==='0')s+=`<circle cx="${x}" cy="${y0-12}" r="4.5" fill="none" stroke="#22d3ee" stroke-width="1.8"/>`;
+    else{if(bar&&p[i]==='1'&&+v===bar.fr)return;const n=+v,y=y0+dy*(n-base+.5);s+=`<circle cx="${x}" cy="${y}" r="8" fill="#ff2d8a"/><text x="${x}" y="${y+4}" fill="#fff" font-size="10.5" font-weight="800" text-anchor="middle">${p[i]}</text>`}});
+  return s+'</svg>'}
+/* ---------- звук: щипок струны (Karplus-Strong) ---------- */
+let AC=null;const ac=()=>{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC};
+const cache={};
+function pluck(freq,when=0,vol=.35){const a=ac(),key=freq.toFixed(1);let buf=cache[key];
+  if(!buf){const sr=a.sampleRate,len=Math.floor(sr*2.2),N=Math.round(sr/freq),d=new Float32Array(len);for(let i=0;i<N;i++)d[i]=Math.random()*2-1;for(let i=N;i<len;i++)d[i]=(d[i-N]+d[i-N+1])*.4985;buf=a.createBuffer(1,len,sr);buf.copyToChannel(d,0);cache[key]=buf}
+  const s=a.createBufferSource(),g=a.createGain(),lp=a.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3200;s.buffer=buf;g.gain.value=vol;s.connect(lp).connect(g).connect(a.destination);s.start(a.currentTime+when)}
+function strum(name,up=false,when=0,vol=.28){const f=CH[name].f.split('');let idx=[0,1,2,3,4,5];if(up)idx.reverse();let k=0;idx.forEach(i=>{if(f[i]==='x')return;pluck(OPEN[i]*Math.pow(2,+f[i]/12),when+k*0.028,vol);k++})}
+/* ---------- вкладки ---------- */
+let TAB='chords';
+function moveTbi(){const b=$('#tb button.on'),i=$('#tbi');if(!b)return;i.style.left=b.offsetLeft+'px';i.style.width=b.offsetWidth+'px'}
+function show(t){TAB=t;$$('#tb button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));moveTbi();$$('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);try{history.replaceState(null,'','#'+t)}catch(e){}if(t!=='metro'&&mRun)mStop();if(t!=='tuner'&&tStream)tOff()}
+$$('#tb button').forEach(b=>b.onclick=()=>{show(b.dataset.t);const el=$('#t-'+b.dataset.t);if(el.getBoundingClientRect().top<0||scrollY>200)el.scrollIntoView({behavior:'smooth'})});addEventListener('resize',moveTbi);
+/* ---------- эквалайзер в шапке ---------- */
+(function(){const cv=$('#eq'),cx=cv.getContext('2d');let W,H,t=0,vis=true;const lite=!matchMedia('(hover:hover)').matches;const size=()=>{W=cv.clientWidth;H=cv.clientHeight;cv.width=W;cv.height=H};size();addEventListener('resize',size);
+  new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe(cv);
+  function f(){requestAnimationFrame(f);if(!vis||RED)return;t+=lite?.5:1;if(lite&&t%2)return;cx.clearRect(0,0,W,H);const n=Math.floor(W/14),bw=10;
+    for(let i=0;i<n;i++){const v=(Math.sin(t*.06+i*.45)*.5+.5)*(Math.sin(t*.023+i*.17)*.4+.6)*(.5+.5*Math.sin(i*.9+t*.01));const h=8+v*(H-10);const g=cx.createLinearGradient(0,H-h,0,H);g.addColorStop(0,i%3?'#ff2d8a':'#22d3ee');g.addColorStop(1,'rgba(139,92,246,.2)');cx.fillStyle=g;cx.fillRect(i*14+2,H-h,bw,h)}}f()})();
+/* ---------- аккорды ---------- */
+let grp='Все';
+function renderChords(){const gs=['Все','Мажор','Минор','Септаккорды'];$('#cflt').innerHTML=gs.map(g=>`<button class="chip ${g===grp?'on':''}" data-g="${g}">${g}</button>`).join('');$$('#cflt .chip').forEach(b=>b.onclick=()=>{grp=b.dataset.g;renderChords()});
+  $('#chords').innerHTML=Object.keys(CH).filter(k=>grp==='Все'||CH[k].g===grp).map((k,i)=>`<div class="cc ${ST.got.includes(k)?'got':''}" data-c="${k}" style="animation-delay:${i*35}ms"><button class="lr" title="Выучил">✓</button><b>${k}</b><small>${CH[k].d}</small>${svgChord(k)}</div>`).join('');
+  $$('.cc').forEach(c=>{c.onclick=e=>{const k=c.dataset.c;if(e.target.closest('.lr')){const i=ST.got.indexOf(k);i<0?ST.got.push(k):ST.got.splice(i,1);c.classList.toggle('got');saveST();if(i<0)toast('Отлично! '+k+' выучен');return}strum(k);c.classList.remove('play');void c.offsetWidth;c.classList.add('play')}})}
+/* ---------- тренажёр ---------- */
+const STRUMS={'Вниз ×4':['↓','↓','↓','↓'],'Поп-бой':['↓','·','↓','↑','·','↑','↓','↑'],'Восьмёрка':['↓','↑','↓','↑','↓','↑','↓','↑']};
+let trSel=['Am','C'],strumK='Вниз ×4',trRun=false,trT=null,trI=0,trBeat=0,trChanges=0,trStart=0;
+function renderTrPick(){$('#trPick').innerHTML=Object.keys(CH).map(k=>`<button class="chip ${trSel.includes(k)?'on':''}" data-c="${k}">${k}</button>`).join('');$$('#trPick .chip').forEach(b=>b.onclick=()=>{const k=b.dataset.c,i=trSel.indexOf(k);if(i>=0){if(trSel.length>2)trSel.splice(i,1)}else if(trSel.length<4)trSel.push(k);else toast('Не больше 4 аккордов');renderTrPick();trShow()});
+  $('#strumPick').innerHTML=Object.keys(STRUMS).map(k=>`<button class="chip ${k===strumK?'on':''}" data-k="${k}">${k}</button>`).join('');$$('#strumPick .chip').forEach(b=>b.onclick=()=>{strumK=b.dataset.k;renderTrPick();trShow()})}
+function trShow(){const a=trSel[trI%trSel.length],b=trSel[(trI+1)%trSel.length];$('#nowN').textContent=a;$('#nowD').innerHTML=svgChord(a);$('#nextN').textContent=b;$('#nextD').innerHTML=svgChord(b);
+  $('#beats').innerHTML=[0,1,2,3].map(i=>`<i class="${i===0?'first':''}"></i>`).join('');$('#strum').innerHTML=STRUMS[strumK].map(s=>`<i class="${s==='·'?'x':''}">${s}</i>`).join('')}
+$('#trBpm').oninput=e=>$('#trBpmV').textContent=e.target.value;
+function trTick(){const bpm=+$('#trBpm').value,bars=+$('#trBars').value,sub=STRUMS[strumK].length/4,stepMs=60000/bpm/sub;let s=0;
+  const go=()=>{if(!trRun)return;const beatInBar=Math.floor(s/sub)%4,subI=s%STRUMS[strumK].length,barIdx=Math.floor(s/sub/4);
+    if(s>0&&s%(sub*4*bars)===0){trI++;trChanges++;trShow();$('#trInfo').textContent='Смен: '+trChanges;const r=$('#ring');r.classList.remove('go');void r.offsetWidth;r.classList.add('go')}
+    $$('#beats i').forEach((i,k)=>i.classList.toggle('on',k===beatInBar));$$('#strum i').forEach((i,k)=>i.classList.toggle('on',k===subI));
+    const sym=STRUMS[strumK][subI];if($('#trSnd').checked&&sym!=='·')strum(trSel[trI%trSel.length],sym==='↑',0,sym==='↑'?.18:.26);else if(s%sub===0)pluck(beatInBar===0?1760:1320,0,.08);
+    s++;trT=setTimeout(go,stepMs)};go()}
+$('#trGo').onclick=()=>{if(trRun){trRun=false;clearTimeout(trT);$('#trGo').textContent='▶ Старт';const min=(Date.now()-trStart)/60000;if(min>=.5){const rate=Math.round(trChanges/min);if(rate>ST.best){ST.best=rate;saveST();toast('Новый рекорд: '+rate+' смен в минуту!')}}return}
+  ac();trRun=true;trI=0;trChanges=0;trStart=Date.now();$('#trInfo').textContent='Смен: 0';trShow();$('#trGo').textContent='⏸ Стоп';trTick()};
+/* ---------- тюнер ---------- */
+(function(){let s='';for(let i=-50;i<=50;i+=10){const a=(i/50)*80*Math.PI/180,x1=100+Math.sin(a)*72,y1=105-Math.cos(a)*72,x2=100+Math.sin(a)*(i%50?66:62),y2=105-Math.cos(a)*(i%50?66:62);s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#a99bc4" stroke-width="${i===0?2.5:1.2}"/>`}$('#ticks').innerHTML=s})();
+$('#strs').innerHTML=OPEN.map((f,i)=>`<button data-i="${i}">${SN[i]}<small>${6-i} стр.</small></button>`).join('');
+$$('#strs button').forEach(b=>b.onclick=()=>pluck(OPEN[+b.dataset.i],0,.5));
+let tStream=null,tRaf=0,tAn=null,tBuf=null,smooth=0;
+const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function detect(buf,sr){let rms=0;for(const v of buf)rms+=v*v;rms=Math.sqrt(rms/buf.length);if(rms<.012)return -1;
+  const n=buf.length,maxL=Math.floor(sr/60),minL=Math.floor(sr/1000);let best=-1,bestC=0;const c=new Float32Array(maxL+1);
+  for(let l=minL;l<=maxL;l++){let s=0;for(let i=0;i<n-l;i++)s+=buf[i]*buf[i+l];c[l]=s}
+  let l=minL;while(l<maxL&&c[l]>0)l++;for(;l<maxL;l++)if(c[l]>bestC){bestC=c[l];best=l}
+  if(best<=0)return -1;const y1=c[best-1]||0,y2=c[best],y3=c[best+1]||0,sh=(y3-y1)/(2*(2*y2-y1-y3)||1);return sr/(best+sh)}
+function tLoop(){tRaf=requestAnimationFrame(tLoop);tAn.getFloatTimeDomainData(tBuf);const f=detect(tBuf,AC.sampleRate);if(f<60||f>1100)return;
+  smooth=smooth?smooth*.7+f*.3:f;const m=12*Math.log2(smooth/440)+69,r=Math.round(m),cents=Math.round((m-r)*100),name=NOTES[(r%12+12)%12];
+  $('#tNote').textContent=name;$('#tNote').classList.toggle('ok',Math.abs(cents)<=5);$('#tHz').textContent=smooth.toFixed(1)+' Гц · '+(cents>0?'+':'')+cents+' центов';
+  $('#needle').style.transform=`rotate(${Math.max(-50,Math.min(50,cents))/50*80}deg)`;
+  let bi=0,bd=1e9;OPEN.forEach((o,i)=>{const d=Math.abs(1200*Math.log2(smooth/o));if(d<bd){bd=d;bi=i}});$$('#strs button').forEach((b,i)=>b.classList.toggle('hot',i===bi&&bd<60))}
+async function tOnF(){try{ac();tStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const src=AC.createMediaStreamSource(tStream);tAn=AC.createAnalyser();tAn.fftSize=4096;tBuf=new Float32Array(tAn.fftSize);src.connect(tAn);smooth=0;tLoop();$('#tOn').textContent='⏹ Выключить';$('#tHz').textContent='слушаю… дёрни струну'}catch(e){toast('Нет доступа к микрофону');$('#tHz').textContent='разреши микрофон в настройках браузера'}}
+function tOff(){cancelAnimationFrame(tRaf);if(tStream)tStream.getTracks().forEach(t=>t.stop());tStream=null;$('#tOn').textContent='🎙 Включить тюнер'}
+$('#tOn').onclick=()=>tStream?tOff():tOnF();
+/* ---------- метроном (точное расписание через Web Audio) ---------- */
+let bpm=90,sig=4,mRun=false,nextT=0,beat=0,mTimer=null,taps=[];
+const TEMPO=[[60,'Largo - очень медленно'],[76,'Adagio - медленно'],[108,'Andante - спокойно'],[120,'Moderato - умеренно'],[168,'Allegro - быстро'],[999,'Presto - очень быстро']];
+function setBpm(v){bpm=Math.max(40,Math.min(208,Math.round(v)));$('#mBpm').textContent=bpm;$('#mRange').value=bpm;$('#mName').textContent=TEMPO.find(t=>bpm<t[0])[1]}
+$('#mRange').oninput=e=>setBpm(+e.target.value);$$('[data-d]').forEach(b=>b.onclick=()=>setBpm(bpm+ +b.dataset.d));
+$('#mSig').innerHTML=[2,3,4,6].map(s=>`<button class="chip ${s===4?'on':''}" data-s="${s}">${s}/4</button>`).join('');
+$$('#mSig .chip').forEach(b=>b.onclick=()=>{sig=+b.dataset.s;$$('#mSig .chip').forEach(x=>x.classList.toggle('on',x===b));lamps()});
+function lamps(){$('#lamps').innerHTML=Array.from({length:sig},(_, i)=>`<i class="lamp"></i>`).join('')}lamps();
+function click(t,first){const a=AC,o=a.createOscillator(),g=a.createGain();o.frequency.value=first?1600:1000;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.6,t+.002);g.gain.exponentialRampToValueAtTime(.0001,t+.06);o.connect(g).connect(a.destination);o.start(t);o.stop(t+.07)}
+function sched(){while(nextT<AC.currentTime+.12){const b=beat%sig,t=nextT;click(t,b===0);const delay=Math.max(0,(t-AC.currentTime)*1000);setTimeout(()=>{if(!mRun)return;$$('.lamp').forEach((l,i)=>{l.classList.toggle('on',i===b);l.classList.toggle('first',i===0)});$('#pend').style.transition=`transform ${60/bpm}s ease-in-out`;$('#pend').style.transform=`rotate(${beat%2?28:-28}deg)`},delay);nextT+=60/bpm;beat++}}
+function mStart(){ac();mRun=true;beat=0;nextT=AC.currentTime+.05;mTimer=setInterval(sched,25);$('#mGo').textContent='⏸ Стоп'}
+function mStop(){mRun=false;clearInterval(mTimer);$('#mGo').textContent='▶ Старт';$$('.lamp').forEach(l=>l.classList.remove('on'))}
+$('#mGo').onclick=()=>mRun?mStop():mStart();
+$('#mTap').onclick=()=>{const n=performance.now();taps=taps.filter(t=>n-t<3000);taps.push(n);if(taps.length>=3){const iv=(taps[taps.length-1]-taps[0])/(taps.length-1);setBpm(60000/iv)}const b=$('#mTap');b.animate([{transform:'scale(.92)'},{transform:'scale(1)'}],{duration:200})};
+/* ---------- ИИ ---------- */
+const STEPS=[['Идея и настроение','О чём песня? Какое чувство: радость, грусть, драйв? Запиши 3-5 слов-ассоциаций.'],
+ ['Текст - твой','Пиши сам, своими словами. ИИ можно попросить подсказать рифму или проверить ритм строки, но идея и строки - твои.'],
+ ['Структура','Куплет - припев - куплет - припев - бридж - припев. Припев - самая запоминающаяся часть, повторяй его.'],
+ ['Аккорды и мелодия','Сыграй последовательность на гитаре (генератор ниже) и напой мелодию. Запиши на телефон, чтобы не забыть.'],
+ ['Промпт для нейросети','Опиши стиль: жанр, темп, настроение, инструменты, тип вокала. Конструктор ниже соберёт промпт.'],
+ ['Своя гитара в треке','Запиши свою партию гитары и добавь её в трек - так он станет по-настоящему твоим.'],
+ ['Сведение','Выровняй громкость, убери лишние шумы, проверь звучание в наушниках и на колонке телефона.'],
+ ['Публикация','Перед публикацией прочитай правила сервиса: кому принадлежат права и можно ли выкладывать трек.']];
+$('#steps').innerHTML=STEPS.map((s,i)=>`<div class="st" style="animation-delay:${i*60}ms"><span class="n">${i+1}</span><h3>${s[0]}</h3><p>${s[1]}</p></div>`).join('');
+const PB={'Жанр':['pop','rock','indie folk','hip-hop','lo-fi','synthwave','acoustic ballad','electronic dance'],'Настроение':['uplifting','melancholic','energetic','dreamy','epic','calm','nostalgic','playful'],
+ 'Темп':['slow 70 bpm','mid-tempo 100 bpm','upbeat 120 bpm','fast 150 bpm'],'Инструменты':['acoustic guitar','electric guitar','piano','synth pads','strings','drums','bass','balalaika'],'Вокал':['male vocals','female vocals','duet','choir','instrumental']};
+const PS={};Object.keys(PB).forEach(k=>PS[k]=new Set([PB[k][0]]));PS['Инструменты'].add('drums');
+function renderPB(){$('#pb').innerHTML=Object.entries(PB).map(([k,v])=>`<div class="grp"><b>${k}</b><div class="opts">${v.map(o=>`<button class="chip ${PS[k].has(o)?'on':''}" data-k="${k}" data-o="${o}">${o}</button>`).join('')}</div></div>`).join('');
+  $$('#pb .chip').forEach(b=>b.onclick=()=>{const k=b.dataset.k,o=b.dataset.o,multi=k==='Инструменты'||k==='Настроение';if(multi){PS[k].has(o)&&PS[k].size>1?PS[k].delete(o):PS[k].add(o)}else PS[k]=new Set([o]);renderPB()});
+  $('#pOut').textContent=[...PS['Жанр'],...PS['Настроение'],...PS['Темп'],...PS['Инструменты'],...PS['Вокал']].join(', ')}
+$('#pCopy').onclick=()=>{const t=$('#pOut').textContent;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Промпт скопирован'),()=>toast('Выдели текст и скопируй вручную'))};
+$('#pRand').onclick=()=>{const r=a=>a[Math.floor(Math.random()*a.length)];Object.keys(PB).forEach(k=>PS[k]=new Set([r(PB[k])]));PS['Инструменты'].add(r(PB['Инструменты']));renderPB()};
+const MOODS={'Весёлое':[['C','G','Am','F'],['G','D','Em','C'],['D','A','Hm','G'],['C','F','G','C']],'Грустное':[['Am','F','C','G'],['Am','Dm','E','Am'],['Em','C','G','D'],['Am','Dm','G','C']],
+ 'Драйвовое':[['Em','C','G','D'],['Am','G','F','E'],['E','A','D','A'],['G','C','D','C']],'Баллада':[['C','Am','F','G'],['G','Em','C','D'],['D','Hm','G','A'],['Am','F','C','E']]};
+let mood='Весёлое',progI=0,playing=false;
+function renderMood(){$('#moodPick').innerHTML=Object.keys(MOODS).map(m=>`<button class="chip ${m===mood?'on':''}" data-m="${m}">${m}</button>`).join('');$$('#moodPick .chip').forEach(b=>b.onclick=()=>{mood=b.dataset.m;progI=0;renderMood()});
+  $('#prog').innerHTML=MOODS[mood][progI].map((c,i)=>`<div class="pc" data-i="${i}">${c}<small>${CH[c].d}</small></div>`).join('')}
+$('#pNew').onclick=()=>{progI=(progI+1)%MOODS[mood].length;renderMood()};
+$('#pPlay').onclick=()=>{if(playing)return;ac();playing=true;const seq=MOODS[mood][progI],beat=60/96;let k=0;
+  const step=()=>{$$('#prog .pc').forEach((p,i)=>p.classList.toggle('on',i===Math.floor(k/4)));if(k>=16){playing=false;setTimeout(()=>$$('#prog .pc').forEach(p=>p.classList.remove('on')),300);return}
+    strum(seq[Math.floor(k/4)],k%2===1,0,k%4===0?.3:.18);k++;setTimeout(step,beat*1000)};step()};
+const FORM=[['Интро','#6366f1'],['Куплет 1','#8b5cf6'],['Припев','#ff2d8a'],['Куплет 2','#8b5cf6'],['Припев','#ff2d8a'],['Бридж','#22d3ee'],['Припев','#ff2d8a'],['Аутро','#6366f1']];
+$('#form').innerHTML=FORM.map((f,i)=>`<span style="background:${f[1]};animation-delay:${i*70}ms">${f[0]}</span>`).join('');
+/* ---------- старт ---------- */
+renderChords();renderTrPick();trShow();renderPB();renderMood();saveST();
+const h=location.hash.slice(1);show(['chords','tuner','metro','ai'].includes(h)?h:'chords');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
+</script>
+</body>
+</html>
