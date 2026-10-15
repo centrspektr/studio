@@ -136,6 +136,7 @@ footer{color:var(--dim);font-size:13px;text-align:center;padding:30px 0 40px;bor
 html.fx body{background:transparent} html.fx{background:var(--bg)} html.fx body::before{display:none}
 .card,.cc,.st,.big{background:color-mix(in srgb,var(--card) 84%,transparent)}
 html.fx .card,html.fx .cc,html.fx .st{box-shadow:0 1px 0 rgba(255,255,255,.07) inset,0 18px 40px -22px rgba(0,0,0,.8)}
+@media(hover:none),(max-width:860px){html.fx header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(12,7,22,.96)}}
 @media(hover:hover) and (min-width:861px){html.fx .card,html.fx .st{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}}
 .btn{position:relative;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 6px 14px -8px rgba(0,0,0,.6);transition:border-color .2s,translate .25s cubic-bezier(.3,1.6,.5,1),box-shadow .2s}
 .btn:hover{translate:0 -2px} .btn:active{transform:none}
