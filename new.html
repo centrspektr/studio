@@ -175,14 +175,16 @@ html.fx header{background:rgba(12,7,22,.95)}
 <body>
 <header><div class="wrap top">
   <a class="back" href="../">← СПЕКТР</a><span class="brand">Гитара · ИИ-студия</span>
-  <nav class="tb" id="tb"><span class="tbi" id="tbi"></span><button data-t="chords" class="on">🎸 Аккорды</button><button data-t="tuner">🎯 Тюнер</button><button data-t="metro">⏱ Метроном</button><button data-t="games">🎮 Игры</button><button data-t="ai">🤖 Музыка с ИИ</button><button data-t="rate">🏆 Рейтинг</button></nav><button class="skb" data-fx-skin title="Сменить живой фон" aria-label="Сменить фон">🎨</button>
+  <nav class="tb" id="tb"><span class="tbi" id="tbi"></span><button data-t="les" class="on">📚 Уроки</button><button data-t="chords">🎸 Аккорды</button><button data-t="ref">📖 Шпаргалка</button><button data-t="tuner">🎯 Тюнер</button><button data-t="metro">⏱ Метроном</button><button data-t="games">🎮 Игры</button><button data-t="ai">🤖 Музыка с ИИ</button><button data-t="rate">🏆 Рейтинг</button></nav><button class="skb" data-fx-skin title="Сменить живой фон" aria-label="Сменить фон">🎨</button>
 </div></header>
 <main class="wrap">
   <section class="hero"><div class="ph"><img src="studio.webp" alt=""></div><canvas id="eq"></canvas>
-    <div class="hin"><small>РЕСУРСНЫЙ ЦЕНТР СПЕКТР</small><h1>Гитара и <span>ИИ</span>-студия</h1><p>Учим аккорды, настраиваем гитару, держим ритм и создаём свои треки вместе с нейросетями.</p>
+    <div class="hin"><small>РЕСУРСНЫЙ ЦЕНТР СПЕКТР</small><h1>Гитара и <span>ИИ</span>-студия</h1><p>Учимся по урокам: бой, перебор, аккорды и немного нот. Тюнер и метроном всегда под рукой, а свои треки создаём вместе с нейросетями.</p>
       <div class="stats"><span id="stA">🎸 выучено 0 аккордов</span><span id="stB">⚡ рекорд смен: -</span></div></div></section>
 
-  <div class="tab" id="t-chords">
+  <div class="tab" id="t-les"></div>
+
+  <div class="tab" id="t-chords" hidden>
     <h2 class="sec">Аккорды <em>для старта</em></h2><p class="sub">Нажми на аккорд - он прозвучит. Отметь ✓, когда выучишь. Цифры на схеме - номера пальцев левой руки.</p>
     <div class="cflt" id="cflt"></div>
     <div class="chords" id="chords"></div>
@@ -197,6 +199,8 @@ html.fx header{background:rgba(12,7,22,.95)}
       <div class="row" style="margin-top:14px"><button class="btn pri" id="trGo">▶ Старт</button><span class="muted" id="trInfo" style="align-self:center">Смен: 0</span></div>
     </div>
   </div>
+
+  <div class="tab" id="t-ref" hidden></div>
 
   <div class="tab" id="t-tuner" hidden>
     <h2 class="sec">Тюнер <em>гитары</em></h2><p class="sub">Стандартный строй: E A D G B E. Разреши доступ к микрофону и дёрни одну струну.</p>
@@ -306,7 +310,7 @@ function strum(name,up=false,when=0,vol=.28){const f=CH[name].f.split('');let id
 /* ---------- вкладки ---------- */
 let TAB='chords';
 function moveTbi(){const b=$('#tb button.on'),i=$('#tbi');if(!b)return;i.style.left=b.offsetLeft+'px';i.style.width=b.offsetWidth+'px'}
-function show(t){TAB=t;$$('#tb button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));moveTbi();$$('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);try{history.replaceState(null,'','#'+t)}catch(e){}if(t!=='metro'&&mRun)mStop();if(t!=='games'&&window.rStop)rStop();if(t!=='tuner'&&tStream)tOff()}
+function show(t){TAB=t;$$('#tb button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));moveTbi();$$('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);try{history.replaceState(null,'','#'+t)}catch(e){}if(window.lesStop)lesStop();if(t!=='games'&&window.rStop)rStop();if(t!=='tuner'&&tStream&&!window.DOCKT)tOff()}
 $$('#tb button').forEach(b=>b.onclick=()=>{show(b.dataset.t);const el=$('#t-'+b.dataset.t);if(el.getBoundingClientRect().top<0||scrollY>200)el.scrollIntoView({behavior:'smooth'})});addEventListener('resize',moveTbi);
 /* ---------- эквалайзер в шапке ---------- */
 (function(){const cv=$('#eq'),cx=cv.getContext('2d');let W,H,t=0,vis=true;const lite=!matchMedia('(hover:hover)').matches;const size=()=>{W=cv.clientWidth;H=cv.clientHeight;cv.width=W;cv.height=H};size();addEventListener('resize',size);
@@ -349,7 +353,7 @@ function tLoop(){tRaf=requestAnimationFrame(tLoop);tAn.getFloatTimeDomainData(tB
   smooth=smooth?smooth*.7+f*.3:f;const m=12*Math.log2(smooth/440)+69,r=Math.round(m),cents=Math.round((m-r)*100),name=NOTES[(r%12+12)%12];
   $('#tNote').textContent=name;$('#tNote').classList.toggle('ok',Math.abs(cents)<=5);$('#tHz').textContent=smooth.toFixed(1)+' Гц · '+(cents>0?'+':'')+cents+' центов';
   $('#needle').style.transform=`rotate(${Math.max(-50,Math.min(50,cents))/50*80}deg)`;
-  let bi=0,bd=1e9;OPEN.forEach((o,i)=>{const d=Math.abs(1200*Math.log2(smooth/o));if(d<bd){bd=d;bi=i}});$$('#strs button').forEach((b,i)=>b.classList.toggle('hot',i===bi&&bd<60))}
+  let bi=0,bd=1e9;OPEN.forEach((o,i)=>{const d=Math.abs(1200*Math.log2(smooth/o));if(d<bd){bd=d;bi=i}});$$('#strs button').forEach((b,i)=>b.classList.toggle('hot',i===bi&&bd<60));if(window.tunHook)tunHook(name,cents)}
 async function tOnF(){try{ac();tStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const src=AC.createMediaStreamSource(tStream);tAn=AC.createAnalyser();tAn.fftSize=4096;tBuf=new Float32Array(tAn.fftSize);src.connect(tAn);smooth=0;tLoop();$('#tOn').textContent='⏹ Выключить';$('#tHz').textContent='слушаю… дёрни струну'}catch(e){toast('Нет доступа к микрофону');$('#tHz').textContent='разреши микрофон в настройках браузера'}}
 function tOff(){cancelAnimationFrame(tRaf);if(tStream)tStream.getTracks().forEach(t=>t.stop());tStream=null;$('#tOn').textContent='🎙 Включить тюнер'}
 $('#tOn').onclick=()=>tStream?tOff():tOnF();
@@ -454,8 +458,9 @@ rPatR();upd();
 })();
 /* ---------- старт ---------- */
 renderChords();renderTrPick();trShow();renderPB();renderMood();saveST();
-const h=location.hash.slice(1);show(['chords','tuner','metro','games','ai','rate'].includes(h)?h:'chords');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
+const h=location.hash.slice(1);show(['les','chords','ref','tuner','metro','games','ai','rate'].includes(h)?h:'les');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
 </script>
+<script src="uroki.js"></script>
 <script src="/students.js" defer></script>
 </body>
 </html>
