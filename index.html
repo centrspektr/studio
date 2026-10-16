@@ -7,6 +7,7 @@
 <meta name="description" content="Азы гитары, тренажёр аккордов, тюнер, метроном и создание музыки с помощью ИИ. Ресурсный центр СПЕКТР.">
 <meta name="theme-color" content="#0c0716">
 <link rel="icon" type="image/png" href="favicon.png">
+<script src="/fx.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@600;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
@@ -35,6 +36,7 @@ nav.tb button{position:relative;z-index:1;border:none;background:none;color:var(
 nav.tb button.on{color:#fff}
 .tbi{position:absolute;top:4px;bottom:4px;left:4px;border-radius:10px;background:linear-gradient(135deg,var(--pk),var(--vi));box-shadow:0 4px 18px rgba(255,45,138,.45);transition:left .45s cubic-bezier(.5,1.5,.5,1),width .45s cubic-bezier(.5,1.5,.5,1)}
 @media(max-width:860px){.top{flex-wrap:wrap;height:auto;padding:10px 0}nav.tb{order:3;margin-left:0;width:100%}}
+.back{white-space:nowrap;flex-shrink:0} @media(min-width:861px){.brand{display:none}} .brand{white-space:nowrap}
 /* hero */
 .hero{position:relative;margin-top:18px;border-radius:28px;overflow:hidden;min-height:400px;display:flex;align-items:flex-end;isolation:isolate;border:1px solid var(--line)}
 .hero .ph{position:absolute;inset:0;z-index:-3}
@@ -130,20 +132,60 @@ h2.sec em{font-style:normal;color:var(--pk)}
 .warn{margin-top:12px;padding:12px 14px;border-radius:14px;background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.3);font-size:14px}
 #toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,30px);opacity:0;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:700;transition:.3s;z-index:500;pointer-events:none} #toast.on{opacity:1;transform:translate(-50%,0)}
 footer{color:var(--dim);font-size:13px;text-align:center;padding:30px 0 40px;border-top:1px solid var(--line)}
+
+/* ===== обновление 15.10: живой фон, стекло, игры ===== */
+html.fx body{background:transparent} html.fx{background:var(--bg)} html.fx body::before{display:none}
+.card,.cc,.st,.big{background:color-mix(in srgb,var(--card) 84%,transparent)}
+html.fx .card,html.fx .cc,html.fx .st{box-shadow:0 1px 0 rgba(255,255,255,.07) inset,0 18px 40px -22px rgba(0,0,0,.8)}
+@media(hover:none),(max-width:860px){html.fx header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(12,7,22,.96)}}
+/* над живым фоном размытие пересчитывается каждый кадр - без него плавнее */
+html.fx *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.fx header{background:rgba(12,7,22,.95)}
+.btn{position:relative;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 6px 14px -8px rgba(0,0,0,.6);transition:border-color .2s,translate .25s cubic-bezier(.3,1.6,.5,1),box-shadow .2s}
+.btn:hover{translate:0 -2px} .btn:active{transform:none}
+.btn.pri{box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 -3px 0 rgba(0,0,0,.18) inset,0 10px 26px -8px rgba(255,45,138,.7)}
+.chip,nav.tb button{position:relative;overflow:hidden}
+.fxr{position:absolute;border-radius:50%;background:currentColor;pointer-events:none;opacity:0}
+.skb{margin-left:8px;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-size:18px;flex-shrink:0}
+@media(max-width:860px){.skb{margin-left:auto}}
+/* игры */
+.gm{position:relative;overflow:hidden}
+.gm h3{font:700 19px var(--fh);margin-bottom:4px}
+.gscore{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.gscore span{font-size:13px;font-weight:800;padding:6px 11px;border-radius:999px;background:var(--bg2);border:1px solid var(--line)}
+.gscore b{color:var(--yl)}
+.ear-play{width:118px;height:118px;border-radius:50%;margin:14px auto;display:grid;place-items:center;font-size:44px;border:none;cursor:pointer;color:#fff;background:radial-gradient(circle at 35% 30%,#ff7ab8,#ff2d8a 45%,#8b5cf6);box-shadow:0 0 0 8px rgba(255,45,138,.12),0 18px 40px rgba(255,45,138,.45)}
+.ear-play.on{animation:earp .9s ease-out}
+@keyframes earp{0%{box-shadow:0 0 0 0 rgba(255,45,138,.6),0 18px 40px rgba(255,45,138,.45)}100%{box-shadow:0 0 0 34px rgba(255,45,138,0),0 18px 40px rgba(255,45,138,.45)}}
+.eopts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.eopts .btn{height:58px;font:800 20px var(--fh)}
+.eopts .btn.ok{background:var(--ok);border-color:var(--ok);color:#fff} .eopts .btn.no{background:var(--bad);border-color:var(--bad);color:#fff;animation:shk .4s}
+@keyframes shk{25%{translate:-6px 0}75%{translate:6px 0}}
+.efb{text-align:center;min-height:26px;font-weight:800;margin:8px 0}
+.lane{position:relative;height:150px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#130a24,#0a0614);border:1px solid var(--line);margin:12px 0}
+.lane canvas{position:absolute;inset:0;width:100%;height:100%}
+.rhb{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rhb .btn{height:84px;font-size:38px;border-radius:20px;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.rhb .btn.hit{background:linear-gradient(135deg,var(--pk),var(--vi));border-color:transparent}
+.jdg{position:absolute;left:22%;top:12px;font:800 22px var(--fh);pointer-events:none;opacity:0}
+.jdg.on{animation:jdg .6s ease-out}
+@keyframes jdg{0%{opacity:1;transform:translateY(8px) scale(.8)}30%{transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-16px)}}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>
 <body>
 <header><div class="wrap top">
   <a class="back" href="../">← СПЕКТР</a><span class="brand">Гитара · ИИ-студия</span>
-  <nav class="tb" id="tb"><span class="tbi" id="tbi"></span><button data-t="chords" class="on">🎸 Аккорды</button><button data-t="tuner">🎯 Тюнер</button><button data-t="metro">⏱ Метроном</button><button data-t="ai">🤖 Музыка с ИИ</button><button data-t="rate">🏆 Рейтинг</button></nav>
+  <nav class="tb" id="tb"><span class="tbi" id="tbi"></span><button data-t="les" class="on">📚 Уроки</button><button data-t="chords">🎸 Аккорды</button><button data-t="ref">📖 Шпаргалка</button><button data-t="tuner">🎯 Тюнер</button><button data-t="metro">⏱ Метроном</button><button data-t="games">🎮 Игры</button><button data-t="ai">🤖 Музыка с ИИ</button><button data-t="rate">🏆 Рейтинг</button></nav><button class="skb" data-fx-skin title="Сменить живой фон" aria-label="Сменить фон">🎨</button>
 </div></header>
 <main class="wrap">
   <section class="hero"><div class="ph"><img src="studio.webp" alt=""></div><canvas id="eq"></canvas>
-    <div class="hin"><small>РЕСУРСНЫЙ ЦЕНТР СПЕКТР</small><h1>Гитара и <span>ИИ</span>-студия</h1><p>Учим аккорды, настраиваем гитару, держим ритм и создаём свои треки вместе с нейросетями.</p>
+    <div class="hin"><small>РЕСУРСНЫЙ ЦЕНТР СПЕКТР</small><h1>Гитара и <span>ИИ</span>-студия</h1><p>Учимся по урокам: бой, перебор, аккорды и немного нот. Тюнер и метроном всегда под рукой, а свои треки создаём вместе с нейросетями.</p>
       <div class="stats"><span id="stA">🎸 выучено 0 аккордов</span><span id="stB">⚡ рекорд смен: -</span></div></div></section>
 
-  <div class="tab" id="t-chords">
+  <div class="tab" id="t-les"></div>
+
+  <div class="tab" id="t-chords" hidden>
     <h2 class="sec">Аккорды <em>для старта</em></h2><p class="sub">Нажми на аккорд - он прозвучит. Отметь ✓, когда выучишь. Цифры на схеме - номера пальцев левой руки.</p>
     <div class="cflt" id="cflt"></div>
     <div class="chords" id="chords"></div>
@@ -158,6 +200,8 @@ footer{color:var(--dim);font-size:13px;text-align:center;padding:30px 0 40px;bor
       <div class="row" style="margin-top:14px"><button class="btn pri" id="trGo">▶ Старт</button><span class="muted" id="trInfo" style="align-self:center">Смен: 0</span></div>
     </div>
   </div>
+
+  <div class="tab" id="t-ref" hidden></div>
 
   <div class="tab" id="t-tuner" hidden>
     <h2 class="sec">Тюнер <em>гитары</em></h2><p class="sub">Стандартный строй: E A D G B E. Разреши доступ к микрофону и дёрни одну струну.</p>
@@ -188,6 +232,27 @@ footer{color:var(--dim);font-size:13px;text-align:center;padding:30px 0 40px;bor
   <div class="tab" id="t-rate" hidden>
     <h2 class="sec">Рейтинг <em>студии</em></h2><p class="sub">Выученные аккорды, рекорд смен и задания - в общий зачёт.</p>
     <div data-spk-club="studio" style="--spk-a:#ff2d8a;--spk-b:#8b5cf6;--spk-on:#fff;max-width:760px"></div>
+  </div>
+
+  <div class="tab" id="t-games" hidden>
+    <h2 class="sec">Игры <em>для музыканта</em></h2><p class="sub">Тренируем слух и ритм. Рекорды попадают в общий зачёт студии.</p>
+    <div class="grid2">
+      <div class="card gm"><h3>🎧 Угадай на слух</h3><p class="muted" style="font-size:14px">Нажми на круг - прозвучит аккорд. Угадай, что это.</p>
+        <div class="cflt" id="eMode" style="margin-top:10px"></div>
+        <div class="gscore"><span>Серия: <b id="eStr">0</b></span><span>Рекорд: <b id="eBest">0</b></span></div>
+        <button class="ear-play" id="ePlay" aria-label="Сыграть аккорд">▶</button>
+        <div class="efb" id="eFb">Нажми ▶</div>
+        <div class="eopts" id="eOpts"></div>
+      </div>
+      <div class="card gm"><h3>🥁 Ритм-бой</h3><p class="muted" style="font-size:14px">Стрелки едут к линии. Жми ↓ или ↑ ровно в момент касания. Можно клавишами-стрелками.</p>
+        <div class="cflt" id="rPat" style="margin-top:10px"></div>
+        <div class="tr-set"><label>Темп <input type="range" id="rBpm" min="50" max="120" value="70"> <b id="rBpmV">70</b></label></div>
+        <div class="lane"><canvas id="rCv"></canvas><div class="jdg" id="rJ"></div></div>
+        <div class="gscore"><span>Очки: <b id="rSc">0</b></span><span>Комбо: <b id="rCb">0</b></span><span>Точность: <b id="rAc">-</b></span><span>Рекорд: <b id="rBest">0</b></span></div>
+        <div class="rhb"><button class="btn" id="rDn">↓</button><button class="btn" id="rUp">↑</button></div>
+        <div class="row" style="margin-top:12px"><button class="btn pri" id="rGo">▶ Играть</button></div>
+      </div>
+    </div>
   </div>
 
   <div class="tab" id="t-ai" hidden>
@@ -246,7 +311,7 @@ function strum(name,up=false,when=0,vol=.28){const f=CH[name].f.split('');let id
 /* ---------- вкладки ---------- */
 let TAB='chords';
 function moveTbi(){const b=$('#tb button.on'),i=$('#tbi');if(!b)return;i.style.left=b.offsetLeft+'px';i.style.width=b.offsetWidth+'px'}
-function show(t){TAB=t;$$('#tb button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));moveTbi();$$('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);try{history.replaceState(null,'','#'+t)}catch(e){}if(t!=='metro'&&mRun)mStop();if(t!=='tuner'&&tStream)tOff()}
+function show(t){TAB=t;$$('#tb button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));moveTbi();$$('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);try{history.replaceState(null,'','#'+t)}catch(e){}if(window.lesStop)lesStop();if(t!=='games'&&window.rStop)rStop();if(t!=='tuner'&&tStream&&!window.DOCKT)tOff()}
 $$('#tb button').forEach(b=>b.onclick=()=>{show(b.dataset.t);const el=$('#t-'+b.dataset.t);if(el.getBoundingClientRect().top<0||scrollY>200)el.scrollIntoView({behavior:'smooth'})});addEventListener('resize',moveTbi);
 /* ---------- эквалайзер в шапке ---------- */
 (function(){const cv=$('#eq'),cx=cv.getContext('2d');let W,H,t=0,vis=true;const lite=!matchMedia('(hover:hover)').matches;const size=()=>{W=cv.clientWidth;H=cv.clientHeight;cv.width=W;cv.height=H};size();addEventListener('resize',size);
@@ -289,7 +354,7 @@ function tLoop(){tRaf=requestAnimationFrame(tLoop);tAn.getFloatTimeDomainData(tB
   smooth=smooth?smooth*.7+f*.3:f;const m=12*Math.log2(smooth/440)+69,r=Math.round(m),cents=Math.round((m-r)*100),name=NOTES[(r%12+12)%12];
   $('#tNote').textContent=name;$('#tNote').classList.toggle('ok',Math.abs(cents)<=5);$('#tHz').textContent=smooth.toFixed(1)+' Гц · '+(cents>0?'+':'')+cents+' центов';
   $('#needle').style.transform=`rotate(${Math.max(-50,Math.min(50,cents))/50*80}deg)`;
-  let bi=0,bd=1e9;OPEN.forEach((o,i)=>{const d=Math.abs(1200*Math.log2(smooth/o));if(d<bd){bd=d;bi=i}});$$('#strs button').forEach((b,i)=>b.classList.toggle('hot',i===bi&&bd<60))}
+  let bi=0,bd=1e9;OPEN.forEach((o,i)=>{const d=Math.abs(1200*Math.log2(smooth/o));if(d<bd){bd=d;bi=i}});$$('#strs button').forEach((b,i)=>b.classList.toggle('hot',i===bi&&bd<60));if(window.tunHook)tunHook(name,cents)}
 async function tOnF(){try{ac();tStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const src=AC.createMediaStreamSource(tStream);tAn=AC.createAnalyser();tAn.fftSize=4096;tBuf=new Float32Array(tAn.fftSize);src.connect(tAn);smooth=0;tLoop();$('#tOn').textContent='⏹ Выключить';$('#tHz').textContent='слушаю… дёрни струну'}catch(e){toast('Нет доступа к микрофону');$('#tHz').textContent='разреши микрофон в настройках браузера'}}
 function tOff(){cancelAnimationFrame(tRaf);if(tStream)tStream.getTracks().forEach(t=>t.stop());tStream=null;$('#tOn').textContent='🎙 Включить тюнер'}
 $('#tOn').onclick=()=>tStream?tOff():tOnF();
@@ -336,10 +401,67 @@ $('#pPlay').onclick=()=>{if(playing)return;ac();playing=true;const seq=MOODS[moo
     strum(seq[Math.floor(k/4)],k%2===1,0,k%4===0?.3:.18);k++;setTimeout(step,beat*1000)};step()};
 const FORM=[['Интро','#6366f1'],['Куплет 1','#8b5cf6'],['Припев','#ff2d8a'],['Куплет 2','#8b5cf6'],['Припев','#ff2d8a'],['Бридж','#22d3ee'],['Припев','#ff2d8a'],['Аутро','#6366f1']];
 $('#form').innerHTML=FORM.map((f,i)=>`<span style="background:${f[1]};animation-delay:${i*70}ms">${f[0]}</span>`).join('');
+
+/* ---------- игры: слух и ритм ---------- */
+(function(){
+ST.ear=+ST.ear||0;ST.rh=+ST.rh||0;
+const base=window.SPK_PROGRESS;window.SPK_PROGRESS=()=>{const r=base();r.p+=Math.min(ST.ear,20)+Math.min(Math.floor(ST.rh/500),20);return r};
+/* --- угадай на слух --- */
+const EM={'Мажор или минор':0,'Какой аккорд':1};let em='Мажор или минор',cur=null,streak=0,answered=true;
+const MAJ=['C','D','E','G','A','F'],MIN=['Am','Dm','Em','Hm'],POOL=['Am','C','D','Dm','E','Em','G','A'];
+function eRender(){$('#eMode').innerHTML=Object.keys(EM).map(k=>`<button class="chip ${k===em?'on':''}" data-k="${k}">${k}</button>`).join('');$$('#eMode .chip').forEach(b=>b.onclick=()=>{em=b.dataset.k;streak=0;cur=null;answered=true;eRender()});
+  $('#eStr').textContent=streak;$('#eBest').textContent=ST.ear;
+  let opts=[];if(EM[em]===0)opts=['Мажор 😊','Минор 😢'];else if(cur){const s=new Set([cur]);while(s.size<4)s.add(POOL[Math.floor(Math.random()*POOL.length)]);opts=[...s].sort(()=>Math.random()-.5)}
+  $('#eOpts').innerHTML=opts.map(o=>`<button class="btn" data-o="${o}">${o}</button>`).join('');
+  $$('#eOpts .btn').forEach(b=>b.onclick=()=>eAns(b))}
+function ePlay(){ac();if(answered||!cur){cur=EM[em]===0?(Math.random()<.5?MAJ:MIN)[Math.floor(Math.random()*4)]:POOL[Math.floor(Math.random()*POOL.length)];answered=false;$('#eFb').textContent='Что это?';eRender()}
+  strum(cur,false,0,.3);strum(cur,false,.9,.22);const b=$('#ePlay');b.classList.remove('on');void b.offsetWidth;b.classList.add('on')}
+function eAns(b){if(answered||!cur){toast('Сначала нажми ▶');return}const o=b.dataset.o,isMin=MIN.includes(cur),ok=EM[em]===0?(o.startsWith('Минор')===isMin):o===cur;answered=true;
+  if(ok){streak++;b.classList.add('ok');$('#eFb').textContent='✅ Верно! Это '+cur+' - '+CH[cur].d;if(streak>ST.ear){ST.ear=streak;saveST();if(streak>=3)toast('Новый рекорд слуха: '+streak)}if(navigator.vibrate)navigator.vibrate(25)}
+  else{streak=0;b.classList.add('no');$('#eFb').textContent='❌ Это был '+cur+' - '+CH[cur].d+'. Послушай ещё раз.';$$('#eOpts .btn').forEach(x=>{if(EM[em]===0?(x.dataset.o.startsWith('Минор')===isMin):x.dataset.o===cur)x.classList.add('ok')})}
+  $('#eStr').textContent=streak;$('#eBest').textContent=ST.ear;setTimeout(()=>{if(answered)ePlay()},1400)}
+$('#ePlay').onclick=ePlay;eRender();
+/* --- ритм-бой --- */
+let beatS=1,pat='Поп-бой',run=false,notes=[],t0=0,spb=0,raf=0,score=0,combo=0,hits=0,total=0,timers=[];
+const cv=$('#rCv'),cx=cv.getContext('2d');let W=0,H=0;
+function rSize(){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)}
+function rPatR(){$('#rPat').innerHTML=Object.keys(STRUMS).map(k=>`<button class="chip ${k===pat?'on':''}" data-k="${k}">${k}</button>`).join('');$$('#rPat .chip').forEach(b=>b.onclick=()=>{if(run)return;pat=b.dataset.k;rPatR()})}
+$('#rBpm').oninput=e=>$('#rBpmV').textContent=e.target.value;
+function upd(){$('#rSc').textContent=score;$('#rCb').textContent=combo;$('#rAc').textContent=total?Math.round(hits/total*100)+'%':'-';$('#rBest').textContent=ST.rh}
+function judge(txt,col){const j=$('#rJ');j.textContent=txt;j.style.color=col;j.classList.remove('on');void j.offsetWidth;j.classList.add('on')}
+function draw(){raf=requestAnimationFrame(draw);if(!W)rSize();const now=AC.currentTime,hx=W*.18,px=W*.55/ (spb*2);cx.clearRect(0,0,W,H);
+  // линии долей
+  for(let k=-4;k<60;k++){const bt=t0+k*beatS;const x=hx+(bt-now)*px;if(x<0||x>W)continue;cx.fillStyle='rgba(255,255,255,.06)';cx.fillRect(x,0,1,H)}
+  cx.fillStyle='rgba(255,45,138,.25)';cx.fillRect(hx-3,0,6,H);cx.fillStyle='#ff2d8a';cx.fillRect(hx-1,0,2,H);
+  for(const n of notes){if(n.done&&n.res!=='miss'&&now-n.t>.25)continue;const x=hx+(n.t-now)*px;if(x<-40||x>W+40)continue;const y=H/2,up=n.d==='↑';
+    if(!n.done&&now-n.t>.18){n.done=true;n.res='miss';combo=0;total++;judge('мимо','#ef4444');upd()}
+    const a=n.done?(n.res==='miss'?.25:Math.max(0,1-(now-n.t)*4)):1,r=n.done&&n.res!=='miss'?24+(now-n.t)*80:22;
+    cx.globalAlpha=a;const g=cx.createRadialGradient(x,y,2,x,y,r);g.addColorStop(0,up?'#67e8f9':'#ff7ab8');g.addColorStop(1,up?'#0891b2':'#be185d');cx.fillStyle=g;cx.beginPath();cx.arc(x,y,r,0,6.28);cx.fill();
+    cx.fillStyle='#fff';cx.font='800 24px Unbounded,sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(n.d,x,y+1);cx.globalAlpha=1}
+  if(run&&now>notes[notes.length-1].t+.6)rEnd()}
+function rStart(){ac();rSize();const bpm=+$('#rBpm').value,seq=STRUMS[pat],sub=seq.length/4;spb=60/bpm/sub;const beat=60/bpm,bars=8;
+  t0=AC.currentTime+beat*4+.1;notes=[];beatS=beat;
+  for(let b=0;b<bars;b++)seq.forEach((d,i)=>{if(d!=='·')notes.push({t:t0+(b*seq.length+i)*spb,d,done:false})});
+  for(let k=0;k<4+bars*4;k++){const t=t0-beat*4+k*beat;click(t,k%4===0)}
+  score=0;combo=0;hits=0;total=0;upd();run=true;$('#rGo').textContent='⏹ Стоп';judge('3-2-1...','#facc15');cancelAnimationFrame(raf);draw()}
+function rEnd(){run=false;$('#rGo').textContent='▶ Ещё раз';const acc=total?Math.round(hits/total*100):0;if(score>ST.rh){ST.rh=score;saveST();toast('Новый рекорд ритма: '+score+' очков!')}else toast('Точность '+acc+'%');upd();setTimeout(()=>{if(!run)cancelAnimationFrame(raf)},800)}
+window.rStop=()=>{if(run){run=false;$('#rGo').textContent='▶ Играть'}cancelAnimationFrame(raf);if(AC)try{}catch(e){}};
+function hit(d){if(!run)return;const now=AC.currentTime;let best=null,bd=1;for(const n of notes){if(n.done)continue;const dt=Math.abs(n.t-now);if(dt<bd){bd=dt;best=n}}
+  const btn=d==='↓'?$('#rDn'):$('#rUp');btn.classList.add('hit');setTimeout(()=>btn.classList.remove('hit'),110);
+  if(!best||bd>.2)return;best.done=true;total++;
+  if(best.d!==d){best.res='miss';combo=0;judge('не та стрелка','#ef4444')}
+  else{const p=bd<.07?300:bd<.14?100:50;best.res='hit';hits++;combo++;score+=p*(1+Math.floor(combo/8));judge(p===300?'идеально!':p===100?'хорошо':'успел',p===300?'#facc15':p===100?'#22d3ee':'#a99bc4');strum('Am',d==='↑',0,d==='↑'?.16:.24)}
+  upd()}
+['rDn','rUp'].forEach(id=>{$('#'+id).addEventListener('pointerdown',e=>{e.preventDefault();hit(id==='rDn'?'↓':'↑')})});
+addEventListener('keydown',e=>{if(TAB!=='games')return;if(e.key==='ArrowDown'){e.preventDefault();hit('↓')}if(e.key==='ArrowUp'){e.preventDefault();hit('↑')}});
+$('#rGo').onclick=()=>run?(rStop(),0):rStart();addEventListener('resize',()=>{W=0});
+rPatR();upd();
+})();
 /* ---------- старт ---------- */
 renderChords();renderTrPick();trShow();renderPB();renderMood();saveST();
-const h=location.hash.slice(1);show(['chords','tuner','metro','ai','rate'].includes(h)?h:'chords');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
+const h=location.hash.slice(1);show(['les','chords','ref','tuner','metro','games','ai','rate'].includes(h)?h:'les');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
 </script>
+<script src="uroki.js"></script>
 <script src="/students.js" defer></script>
 </body>
 </html>
