@@ -118,6 +118,9 @@ h2.sec em{font-style:normal;color:var(--pk)}
 .dial svg{width:100%;height:100%}
 .note{font:800 72px var(--fh);line-height:1;transition:color .3s}
 .note.ok{color:var(--ok);text-shadow:0 0 30px rgba(34,197,94,.6)}
+.note.dim{opacity:.35}
+.tadv{min-height:22px;font:800 16px var(--fb);color:#fb923c;transition:color .3s}.tadv.near{color:var(--yl,#facc15)}.tadv.ok{color:var(--ok)}
+.tmode{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}.tmode button{min-width:38px;height:40px;padding:0 7px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--dim);font:800 14px var(--fh);cursor:pointer;line-height:1.05;transition:.2s}.tmode button small{display:block;font:600 9px var(--fb)}.tmode button.on{background:var(--pk);border-color:transparent;color:#fff}.tmode button.cur{border-color:var(--ok);color:var(--text);box-shadow:0 0 12px rgba(34,197,94,.45)}
 .hz{font:700 15px var(--fb);color:var(--dim);font-variant-numeric:tabular-nums}
 .strs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .strs button{width:54px;height:54px;border-radius:16px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font:800 18px var(--fh);cursor:pointer;transition:.2s}
@@ -241,7 +244,7 @@ html.fx header{background:rgba(12,7,22,.95)}
       <div class="dial"><svg viewBox="0 0 200 115"><defs><linearGradient id="dg" x1="0" x2="1"><stop offset="0" stop-color="#ef4444"/><stop offset=".42" stop-color="#facc15"/><stop offset=".5" stop-color="#22c55e"/><stop offset=".58" stop-color="#facc15"/><stop offset="1" stop-color="#ef4444"/></linearGradient></defs>
         <path d="M15 105 A85 85 0 0 1 185 105" fill="none" stroke="url(#dg)" stroke-width="10" stroke-linecap="round" opacity=".85"/>
         <g id="ticks"></g><line id="needle" x1="100" y1="105" x2="100" y2="28" stroke="#fff" stroke-width="3" stroke-linecap="round" style="transition:transform .15s;transform-origin:100px 105px"/><circle cx="100" cy="105" r="7" fill="#ff2d8a"/></svg></div>
-      <div class="note" id="tNote">-</div><div class="hz" id="tHz">нажми "Включить тюнер"</div>
+      <div class="note" id="tNote">-</div><div class="tadv" id="tAdv"></div><div class="hz" id="tHz">нажми "Включить тюнер"</div><div class="tmode" id="tMode" aria-label="Какую струну настраиваем"></div>
       <div class="row"><button class="btn pri" id="tOn">🎙 Включить тюнер</button></div>
     </div><div class="card">
       <h3 style="font:700 18px var(--fh);margin-bottom:8px">Эталонные звуки</h3><p class="muted" style="font-size:14px;margin-bottom:12px">Нажми на струну - прозвучит нота, подстрой гитару на слух.</p>
@@ -394,20 +397,47 @@ $('#trGo').onclick=()=>{if(trRun){trRun=false;clearTimeout(trT);$('#trGo').textC
 (function(){let s='';for(let i=-50;i<=50;i+=10){const a=(i/50)*80*Math.PI/180,x1=100+Math.sin(a)*72,y1=105-Math.cos(a)*72,x2=100+Math.sin(a)*(i%50?66:62),y2=105-Math.cos(a)*(i%50?66:62);s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#a99bc4" stroke-width="${i===0?2.5:1.2}"/>`}$('#ticks').innerHTML=s})();
 $('#strs').innerHTML=OPEN.map((f,i)=>`<button data-i="${i}">${SN[i]}<small>${6-i} стр.</small></button>`).join('');
 $$('#strs button').forEach(b=>b.onclick=()=>pluck(OPEN[+b.dataset.i],0,.5));
-let tStream=null,tRaf=0,tAn=null,tBuf=null,smooth=0;
+let tStream=null,tRaf=0,tAn=null,tBuf=null,tSrc=null;
 const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-function detect(buf,sr){let rms=0;for(const v of buf)rms+=v*v;rms=Math.sqrt(rms/buf.length);if(rms<.012)return -1;
-  const n=buf.length,maxL=Math.floor(sr/60),minL=Math.floor(sr/1000);let best=-1,bestC=0;const c=new Float32Array(maxL+1);
-  for(let l=minL;l<=maxL;l++){let s=0;for(let i=0;i<n-l;i++)s+=buf[i]*buf[i+l];c[l]=s}
-  let l=minL;while(l<maxL&&c[l]>0)l++;for(;l<maxL;l++)if(c[l]>bestC){bestC=c[l];best=l}
-  if(best<=0)return -1;const y1=c[best-1]||0,y2=c[best],y3=c[best+1]||0,sh=(y3-y1)/(2*(2*y2-y1-y3)||1);return sr/(best+sh)}
-function tLoop(){tRaf=requestAnimationFrame(tLoop);tAn.getFloatTimeDomainData(tBuf);const f=detect(tBuf,AC.sampleRate);if(f<60||f>1100)return;
-  smooth=smooth?smooth*.7+f*.3:f;const m=12*Math.log2(smooth/440)+69,r=Math.round(m),cents=Math.round((m-r)*100),name=NOTES[(r%12+12)%12];
-  $('#tNote').textContent=name;$('#tNote').classList.toggle('ok',Math.abs(cents)<=5);$('#tHz').textContent=smooth.toFixed(1)+' Гц · '+(cents>0?'+':'')+cents+' центов';
-  $('#needle').style.transform=`rotate(${Math.max(-50,Math.min(50,cents))/50*80}deg)`;
-  let bi=0,bd=1e9;OPEN.forEach((o,i)=>{const d=Math.abs(1200*Math.log2(smooth/o));if(d<bd){bd=d;bi=i}});$$('#strs button').forEach((b,i)=>b.classList.toggle('hot',i===bi&&bd<60));if(window.tunHook)tunHook(name,cents)}
-async function tOnF(){try{ac();tStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const src=AC.createMediaStreamSource(tStream);tAn=AC.createAnalyser();tAn.fftSize=4096;tBuf=new Float32Array(tAn.fftSize);src.connect(tAn);smooth=0;tLoop();$('#tOn').textContent='⏹ Выключить';$('#tHz').textContent='слушаю… дёрни струну'}catch(e){toast('Нет доступа к микрофону');$('#tHz').textContent='разреши микрофон в настройках браузера'}}
-function tOff(){cancelAnimationFrame(tRaf);if(tStream)tStream.getTracks().forEach(t=>t.stop());tStream=null;$('#tOn').textContent='🎙 Включить тюнер'}
+/* YIN: ищем период звука; уверенность - насколько чисто повторяется волна */
+function yin(buf,sr){let rms=0;for(let i=0;i<buf.length;i++)rms+=buf[i]*buf[i];rms=Math.sqrt(rms/buf.length);if(rms<.006)return 0;
+  const D=sr>32000?2:1,n=Math.floor(buf.length/D),x=new Float32Array(n);for(let i=0;i<n;i++){let s=0;for(let k=0;k<D;k++)s+=buf[i*D+k];x[i]=s/D}
+  const r=sr/D,W=Math.floor(n/2),tMin=Math.max(2,Math.floor(r/1100)),tMax=Math.min(W-2,Math.floor(r/62)),d=new Float32Array(tMax+2);
+  for(let t=1;t<=tMax+1;t++){let s=0;for(let i=0;i<W;i++){const v=x[i]-x[i+t];s+=v*v}d[t]=s}
+  let sum=0;const c=new Float32Array(tMax+2);c[0]=1;for(let t=1;t<=tMax+1;t++){sum+=d[t];c[t]=sum?d[t]*t/sum:1}
+  let tau=-1;for(let t=tMin;t<=tMax;t++)if(c[t]<.15){while(t+1<=tMax&&c[t+1]<c[t])t++;tau=t;break}
+  if(tau<0)return 0;const a=c[tau-1],b=c[tau],e=c[tau+1],den=a-2*b+e,sh=den?(a-e)/(2*den):0;return r/(tau+(Math.abs(sh)<1?sh:0))}
+/* тюнер гитары: сам находит струну, стрелка плавная, от шума не дёргается */
+const T={lock:-1,str:-1,cand:-1,candN:0,hist:[],last:0,val:0,ndl:0,okSince:0,fr:0,f:0};
+const cOf=(f,t)=>1200*Math.log2(f/t);
+function tPick(f){ // струна и частота с поправкой на октаву (часто ловится 2-я гармоника)
+  const near=g=>{let k=0,m=1e9;OPEN.forEach((o,i)=>{const d=Math.abs(cOf(g,o));if(d<m){m=d;k=i}});return k};
+  let s=T.lock>=0?T.lock:near(f);
+  for(const g of [f/2,f*2])if(Math.abs(cOf(g,OPEN[s]))+30<Math.abs(cOf(f,OPEN[s]))&&Math.abs(cOf(g,OPEN[s]))<120)f=g;
+  if(T.lock<0){s=near(f);if(s!==T.str){if(s===T.cand)T.candN++;else{T.cand=s;T.candN=1}if(T.str>=0&&T.candN<3)s=T.str;else{T.str=s;T.hist=[]}}}else T.str=s;
+  return [s,f]}
+function tTick(){tRaf=requestAnimationFrame(tTick);const now=performance.now();
+  if(tAn&&(T.fr++&1)===0){tAn.getFloatTimeDomainData(tBuf);const f=yin(tBuf,AC.sampleRate);
+    if(f>60&&f<1100){const [s,g]=tPick(f);T.f=g;T.hist.push(cOf(g,OPEN[s]));if(T.hist.length>5)T.hist.shift();const h=[...T.hist].sort((x,y)=>x-y);T.val=h[h.length>>1];T.last=now;tShow(now)}}
+  const live=now-T.last<1300,tg=live?Math.max(-50,Math.min(50,T.val)):0;T.ndl+=(tg-T.ndl)*(RED?1:.16);
+  $('#needle').style.transform=`rotate(${(T.ndl/50*80).toFixed(2)}deg)`;
+  if(!live&&T.str>=0&&!$('#tNote').classList.contains('dim')){$('#tNote').classList.add('dim');$('#tHz').textContent='дёрни струну ещё раз';$('#tAdv').textContent='';T.okSince=0}}
+function tShow(now){const s=T.str,c=T.val,ok=Math.abs(c)<=4,m=12*Math.log2(T.f/440)+69,r=Math.round(m),nm=NOTES[(r%12+12)%12]+(Math.floor(r/12)-1);
+  if(ok){if(!T.okSince)T.okSince=now}else T.okSince=0;const done=ok&&now-T.okSince>500;
+  const n=$('#tNote');n.textContent=SN[s];n.classList.remove('dim');n.classList.toggle('ok',ok);
+  $('#tHz').textContent=`${nm} · ${T.f.toFixed(1)} Гц · ${c>0?'+':''}${Math.round(c)} центов`;
+  $('#tAdv').textContent=done?'✓ Настроено':Math.abs(c)>60?(c<0?'Сильно ниже - подтяни струну':'Сильно выше - ослабь струну'):ok?'Почти точно, держи…':c<0?'Ниже - подтяни струну':'Выше - ослабь струну';
+  $('#tAdv').className='tadv '+(done?'ok':Math.abs(c)<=15?'near':'');
+  $$('#strs button').forEach((b,i)=>b.classList.toggle('hot',i===s));$$('#tMode button').forEach(b=>b.classList.toggle('cur',+b.dataset.m===s&&T.lock<0));
+  if(window.tunHook)tunHook(SN[s],c)}
+$('#tMode').innerHTML=`<button data-m="-1" class="on">Авто</button>`+SN.map((n,i)=>`<button data-m="${i}">${n}<small>${6-i}</small></button>`).join('');
+$$('#tMode button').forEach(b=>b.onclick=()=>{T.lock=+b.dataset.m;T.str=T.lock;T.hist=[];$$('#tMode button').forEach(x=>x.classList.toggle('on',x===b))});
+async function tOnF(){try{ac();tStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});tSrc=AC.createMediaStreamSource(tStream);
+  const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=60;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1200;
+  tAn=AC.createAnalyser();tAn.fftSize=4096;tBuf=new Float32Array(tAn.fftSize);tSrc.connect(hp);hp.connect(lp);lp.connect(tAn);
+  Object.assign(T,{str:T.lock,cand:-1,candN:0,hist:[],last:0,okSince:0});$('#needle').style.transition='none';cancelAnimationFrame(tRaf);tTick();
+  $('#tOn').textContent='⏹ Выключить';$('#tHz').textContent='слушаю… дёрни одну струну';$('#tNote').textContent='-'}catch(e){toast('Нет доступа к микрофону');$('#tHz').textContent='разреши микрофон в настройках браузера'}}
+function tOff(){cancelAnimationFrame(tRaf);if(tStream)tStream.getTracks().forEach(t=>t.stop());if(tSrc)try{tSrc.disconnect()}catch(e){}tStream=null;tSrc=null;tAn=null;T.ndl=0;$('#needle').style.transform='rotate(0deg)';$('#tNote').classList.remove('ok','dim');$('#tAdv').textContent='';$$('#strs button').forEach(b=>b.classList.remove('hot'));$('#tOn').textContent='🎙 Включить тюнер'}
 $('#tOn').onclick=()=>tStream?tOff():tOnF();
 /* ---------- метроном (точное расписание через Web Audio) ---------- */
 let bpm=90,sig=4,mRun=false,nextT=0,beat=0,mTimer=null,taps=[];
