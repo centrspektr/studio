@@ -7,6 +7,9 @@
 <meta name="description" content="Азы гитары, тренажёр аккордов, тюнер, метроном и создание музыки с помощью ИИ. Ресурсный центр СПЕКТР.">
 <meta name="theme-color" content="#0c0716">
 <link rel="icon" type="image/png" href="favicon.png">
+<script>/* в студию всегда входим в Неоне; 🎨 меняет стиль только на этот визит, выбор на портале не трогаем */
+(function(){var R=document.documentElement,K='studio_skin',cur='neon',subs=[];try{cur=sessionStorage.getItem(K)||'neon'}catch(e){}R.dataset.skin=cur;
+window.SKIN={get:function(){return cur},on:function(f){subs.push(f)},set:function(k){cur=k;R.dataset.skin=k;try{sessionStorage.setItem(K,k)}catch(e){}subs.forEach(function(f){try{f(k)}catch(e){}})}}})();</script>
 <script src="/fx.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@600;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -31,12 +34,29 @@ header{position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);background:r
 .back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--dim);font-weight:700;font-size:14px;padding:7px 12px;border-radius:12px;border:1px solid var(--line)}
 .back:hover{color:#fff;border-color:var(--pk)}
 .brand{font:800 16px var(--fh);background:linear-gradient(90deg,var(--pk),var(--yl),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent}
-nav.tb{margin-left:auto;display:flex;gap:4px;position:relative;padding:4px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
-nav.tb button{position:relative;z-index:1;border:none;background:none;color:var(--dim);font:700 13.5px var(--fb);padding:8px 12px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:color .3s}
-nav.tb button.on{color:#fff}
-.tbi{position:absolute;top:4px;bottom:4px;left:4px;border-radius:10px;background:linear-gradient(135deg,var(--pk),var(--vi));box-shadow:0 4px 18px rgba(255,45,138,.45);transition:left .45s cubic-bezier(.5,1.5,.5,1),width .45s cubic-bezier(.5,1.5,.5,1)}
-@media(max-width:860px){.top{flex-wrap:wrap;height:auto;padding:10px 0}nav.tb{order:3;margin-left:0;width:100%}}
-.back{white-space:nowrap;flex-shrink:0} @media(min-width:861px){.brand{display:none}} .brand{white-space:nowrap}
+
+/* вкладки-карусель: листается пальцем, раздел в центре открывается сам */
+.top{flex-wrap:wrap;height:auto;padding:8px 0 0;row-gap:2px}
+.skb{margin-left:auto!important}
+nav.tb{order:3;flex:0 0 auto;width:calc(100% + 32px);min-width:0;max-width:calc(100vw);position:relative;height:84px;margin:0 -16px;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%)}
+.tbt{position:relative;width:100%;display:flex;align-items:center;height:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding:0 calc(50% - 46px);gap:2px;touch-action:pan-x}
+.tbt::-webkit-scrollbar{display:none}
+.tbt button{flex:0 0 92px;height:80px;scroll-snap-align:center;border:0;background:none;color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;font:700 12px var(--fb);will-change:transform,opacity;-webkit-tap-highlight-color:transparent;padding:0;transition:color .35s}
+.tbt .ic{position:relative;width:46px;height:46px;border-radius:16px;display:grid;place-items:center;color:var(--c);background:linear-gradient(150deg,color-mix(in srgb,var(--c) 22%,transparent),rgba(255,255,255,.03));border:1px solid color-mix(in srgb,var(--c) 38%,transparent);transition:background .4s,box-shadow .4s,border-color .4s,color .4s,border-radius .4s}
+.tbt .ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.tbt b{font-weight:800;white-space:nowrap;letter-spacing:.2px;line-height:1}
+.tbt button.on{color:#fff}
+.tbt button.on .ic{color:#fff;border-color:transparent;border-radius:50%;background:linear-gradient(135deg,var(--c),var(--pk) 55%,var(--vi));box-shadow:0 8px 24px -4px color-mix(in srgb,var(--c) 70%,transparent),0 0 0 4px color-mix(in srgb,var(--c) 18%,transparent)}
+.tbt button.on .ic::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--c) 55%,transparent);animation:tbring 2.6s ease-out infinite}
+@keyframes tbring{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.25);opacity:0}}
+.tbt button.on .ic svg{animation:tbpop .55s cubic-bezier(.3,1.6,.5,1)}
+@keyframes tbpop{0%{transform:scale(.6) rotate(-12deg)}100%{transform:none}}
+.tba{display:none;position:absolute;top:50%;z-index:3;width:36px;height:36px;margin-top:-22px;border-radius:50%;border:1px solid var(--line);background:var(--bg2);color:var(--text);font:800 20px/1 var(--fb);cursor:pointer;transition:border-color .2s,transform .2s}
+.tba.l{left:16px}.tba.r{right:16px}
+.tba:hover{border-color:var(--pk)}.tba:active{transform:scale(.9)}
+@media(hover:hover) and (pointer:fine){.tba{display:block}.top{flex-wrap:nowrap;padding:0}.skb{order:4}nav.tb{order:2;flex:1 1 auto;width:auto;max-width:860px;margin:0 auto;-webkit-mask-image:none;mask-image:none}.tbt{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14%,#000 86%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 14%,#000 86%,transparent 100%)}.tba{background:rgba(22,13,39,.9)}}
+@media(max-width:860px){.top{padding-top:6px}nav.tb{height:78px}.tbt button{flex-basis:84px;height:74px;font-size:11.5px}.tbt{padding:0 calc(50% - 42px)}.tbt .ic{width:42px;height:42px;border-radius:14px}.tbt .ic svg{width:22px;height:22px}}
+.back{white-space:nowrap;flex-shrink:0} .brand{white-space:nowrap}
 /* hero */
 .hero{position:relative;margin-top:18px;border-radius:28px;overflow:hidden;min-height:400px;display:flex;align-items:flex-end;isolation:isolate;border:1px solid var(--line)}
 .hero .ph{position:absolute;inset:0;z-index:-3}
@@ -53,7 +73,7 @@ nav.tb button.on{color:#fff}
 .stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 .stats span{font-size:13px;font-weight:800;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18)}
 /* секции */
-.tab{scroll-margin-top:130px;padding:26px 0 40px;animation:tin .5s cubic-bezier(.2,.8,.2,1)}
+.tab{scroll-margin-top:150px;padding:26px 0 40px;animation:tin .5s cubic-bezier(.2,.8,.2,1)}
 @keyframes tin{from{opacity:0;transform:translateY(16px)}}
 h2.sec{font:800 clamp(22px,4vw,34px)/1.1 var(--fh);margin-bottom:6px}
 h2.sec em{font-style:normal;color:var(--pk)}
@@ -144,7 +164,7 @@ html.fx header{background:rgba(12,7,22,.95)}
 .btn{position:relative;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 6px 14px -8px rgba(0,0,0,.6);transition:border-color .2s,translate .25s cubic-bezier(.3,1.6,.5,1),box-shadow .2s}
 .btn:hover{translate:0 -2px} .btn:active{transform:none}
 .btn.pri{box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 -3px 0 rgba(0,0,0,.18) inset,0 10px 26px -8px rgba(255,45,138,.7)}
-.chip,nav.tb button{position:relative;overflow:hidden}
+.chip,.tbt button{position:relative;overflow:hidden}
 .fxr{position:absolute;border-radius:50%;background:currentColor;pointer-events:none;opacity:0}
 .skb{margin-left:8px;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-size:18px;flex-shrink:0}
 @media(max-width:860px){.skb{margin-left:auto}}
@@ -170,13 +190,25 @@ html.fx header{background:rgba(12,7,22,.95)}
 .jdg{position:absolute;left:22%;top:12px;font:800 22px var(--fh);pointer-events:none;opacity:0}
 .jdg.on{animation:jdg .6s ease-out}
 @keyframes jdg{0%{opacity:1;transform:translateY(8px) scale(.8)}30%{transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-16px)}}
+/* список учеников */
+.stl h3{font:700 18px var(--fh);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.stn{font:800 13px var(--fb);padding:3px 10px;border-radius:999px;background:linear-gradient(135deg,var(--pk),var(--vi))}
+.stc{display:flex;flex-wrap:wrap;gap:8px}
+.stc span{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);font-weight:700;font-size:14px;animation:tin .5s both;animation-delay:calc(var(--d) * 40ms)}
+.stc i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--pk),var(--vi));font-size:13px;font-weight:800}
+.stw{padding:12px;border-radius:14px;border:1px dashed rgba(250,204,21,.5);background:rgba(250,204,21,.06);margin-bottom:12px;display:grid;gap:8px}
+.stt{display:grid;gap:6px}
+.str{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-radius:12px;background:var(--bg2);border:1px solid var(--line)}
+.str>span:first-child{flex:1;min-width:160px}
+.str.hd{opacity:.6}
+.str code{font:800 13px ui-monospace,monospace;letter-spacing:1px;padding:3px 8px;border-radius:8px;background:rgba(34,211,238,.12);color:var(--cy)}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>
 <body>
 <header><div class="wrap top">
   <a class="back" href="../">← СПЕКТР</a><span class="brand">Гитара · ИИ-студия</span>
-  <nav class="tb" id="tb"><span class="tbi" id="tbi"></span><button data-t="les" class="on">📚 Уроки</button><button data-t="chords">🎸 Аккорды</button><button data-t="ref">📖 Шпаргалка</button><button data-t="tuner">🎯 Тюнер</button><button data-t="metro">⏱ Метроном</button><button data-t="games">🎮 Игры</button><button data-t="ai">🤖 Музыка с ИИ</button><button data-t="rate">🏆 Рейтинг</button></nav><button class="skb" data-fx-skin title="Сменить живой фон" aria-label="Сменить фон">🎨</button>
+  <button class="skb" data-fx-skin title="Сменить живой фон" aria-label="Сменить фон">🎨</button><nav class="tb" id="tb" aria-label="Разделы студии"><button class="tba l" type="button" aria-label="Предыдущий раздел">‹</button><div class="tbt" id="tbt"><button data-t="les" class="on" style="--c:#facc15"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.6C5.6 4 8.6 4 12 6.2c3.4-2.2 6.4-2.2 9-.6V19c-2.6-1.5-5.6-1.5-9 .6-3.4-2.1-6.4-2.1-9-.6z"/><path d="M12 6.2v13.4"/></svg></span><b>Уроки</b></button><button data-t="chords" style="--c:#ff2d8a"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.2 9.8 6-6"/><path d="m18.4 2.4 3.2 3.2"/><path d="M11.6 8.3c-1.7-.6-3.6-.3-4.8 1-.8.8-1.1 1.9-1.1 3-1.6.2-3 .9-3.6 2.2-1 2.1.2 4.8 2.5 6.1 2.4 1.3 5.3.9 6.4-1 .6-1.1.6-2.5.1-3.7 1.1-.1 2.1-.4 2.8-1.1 1.3-1.3 1.6-3.2 1-4.8"/><circle cx="9.4" cy="14.6" r="1.7"/></svg></span><b>Аккорды</b></button><button data-t="ref" style="--c:#22d3ee"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.6"/><path d="M9.2 4V2.8h5.6V4"/><path d="M8.6 10h6.8M8.6 13.5h6.8M8.6 17h4"/></svg></span><b>Шпаргалка</b></button><button data-t="tuner" style="--c:#22c55e"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 17.2a8.4 8.4 0 1 1 16.8 0"/><path d="m12 17.2 4.2-6.4"/><circle cx="12" cy="17.2" r="1.5"/><path d="M12 6.4v1.6M6.1 9.4l1.1 1.1M17.9 9.4l-1.1 1.1"/></svg></span><b>Тюнер</b></button><button data-t="metro" style="--c:#fb923c"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l4.2 18H4.8z"/><path d="m12 15.2 5.2-9.4"/><path d="M7.3 15.2h9.4"/></svg></span><b>Метроном</b></button><button data-t="games" style="--c:#a78bfa"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h10a4 4 0 0 1 3.9 3.1l.9 4.3a2.6 2.6 0 0 1-4.7 2l-1.6-2.4H8.5l-1.6 2.4a2.6 2.6 0 0 1-4.7-2l.9-4.3A4 4 0 0 1 7 8z"/><path d="M8 10.5v3M6.5 12h3"/><circle cx="15.6" cy="11" r=".6"/><circle cx="17.6" cy="13" r=".6"/></svg></span><b>Игры</b></button><button data-t="ai" style="--c:#f472b6"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 18V6.2l10-2.2v12"/><circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/><path d="M4.2 3.2l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"/></svg></span><b>Музыка с ИИ</b></button><button data-t="rate" style="--c:#fde047"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M16 5.6h3V7a3 3 0 0 1-3 3M8 5.6H5V7a3 3 0 0 0 3 3"/><path d="M12 13v3.6M9 20.6h6M9.8 16.6h4.4l.5 4h-5.4z"/></svg></span><b>Рейтинг</b></button></div><button class="tba r" type="button" aria-label="Следующий раздел">›</button></nav>
 </div></header>
 <main class="wrap">
   <section class="hero"><div class="ph"><img src="studio.webp" alt=""></div><canvas id="eq"></canvas>
@@ -232,6 +264,7 @@ html.fx header{background:rgba(12,7,22,.95)}
   <div class="tab" id="t-rate" hidden>
     <h2 class="sec">Рейтинг <em>студии</em></h2><p class="sub">Выученные аккорды, рекорд смен и задания - в общий зачёт.</p>
     <div data-spk-club="studio" style="--spk-a:#ff2d8a;--spk-b:#8b5cf6;--spk-on:#fff;max-width:760px"></div>
+    <div class="card stl" id="stuL" style="max-width:760px;margin-top:16px"></div>
   </div>
 
   <div class="tab" id="t-games" hidden>
@@ -310,9 +343,27 @@ function pluck(freq,when=0,vol=.35){const a=ac(),key=freq.toFixed(1);let buf=cac
 function strum(name,up=false,when=0,vol=.28){const f=CH[name].f.split('');let idx=[0,1,2,3,4,5];if(up)idx.reverse();let k=0;idx.forEach(i=>{if(f[i]==='x')return;pluck(OPEN[i]*Math.pow(2,+f[i]/12),when+k*0.028,vol);k++})}
 /* ---------- вкладки ---------- */
 let TAB='chords';
-function moveTbi(){const b=$('#tb button.on'),i=$('#tbi');if(!b)return;i.style.left=b.offsetLeft+'px';i.style.width=b.offsetWidth+'px'}
-function show(t){TAB=t;$$('#tb button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));moveTbi();$$('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);try{history.replaceState(null,'','#'+t)}catch(e){}if(window.lesStop)lesStop();if(t!=='games'&&window.rStop)rStop();if(t!=='tuner'&&tStream&&!window.DOCKT)tOff()}
-$$('#tb button').forEach(b=>b.onclick=()=>{show(b.dataset.t);const el=$('#t-'+b.dataset.t);if(el.getBoundingClientRect().top<0||scrollY>200)el.scrollIntoView({behavior:'smooth'})});addEventListener('resize',moveTbi);
+const TBT=$('#tbt');let tbInit=false,tbProg=0;
+function moveTbi(){const b=$('#tbt button.on');if(!b)return;const x=b.offsetLeft+b.offsetWidth/2-TBT.clientWidth/2;tbProg=Date.now();TBT.scrollTo({left:x,behavior:tbInit&&!RED?'smooth':'auto'});tbInit=true;if(window.tbFx)tbFx()}
+function show(t){TAB=t;$$('#tbt button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));moveTbi();$$('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);try{history.replaceState(null,'','#'+t)}catch(e){}if(window.lesStop)lesStop();if(t!=='games'&&window.rStop)rStop();if(t!=='tuner'&&tStream&&!window.DOCKT)tOff()}
+$$('#tbt button').forEach(b=>b.onclick=()=>{tbProg=Date.now();show(b.dataset.t);const el=$('#t-'+b.dataset.t);if(el.getBoundingClientRect().top<0||scrollY>200)el.scrollIntoView({behavior:'smooth'})});addEventListener('resize',moveTbi);
+/* ---------- карусель разделов: плавно, только transform/opacity, без перерисовки страницы ---------- */
+(function(){const B=[...TBT.children];let raf=0,set=0,touch=false,cw=0,mid=[];
+  const meas=()=>{cw=TBT.clientWidth;mid=B.map(b=>b.offsetLeft+b.offsetWidth/2)};
+  function fx(){raf=0;if(!cw)meas();const c=TBT.scrollLeft+cw/2,u=B[0]?B[0].offsetWidth:90;
+    B.forEach((b,i)=>{const d=(mid[i]-c)/u,a=Math.min(Math.abs(d),3);const sc=1-Math.min(a,2.2)*.13,y=a*a*2.2,ry=Math.max(-40,Math.min(40,d*-14));
+      b.style.transform=`translate3d(0,${y.toFixed(1)}px,0) perspective(400px) rotateY(${ry.toFixed(1)}deg) scale(${sc.toFixed(3)})`;b.style.opacity=(1-Math.min(a,2.6)*.25).toFixed(3)})}
+  window.tbFx=()=>{if(!raf)raf=requestAnimationFrame(fx)};
+  const near=()=>{const c=TBT.scrollLeft+cw/2;let k=0,m=1e9;mid.forEach((x,i)=>{const d=Math.abs(x-c);if(d<m){m=d;k=i}});return B[k]};
+  const settle=()=>{if(touch||Date.now()-tbProg<700)return;const b=near();if(b&&!b.classList.contains('on'))show(b.dataset.t)};
+  TBT.addEventListener('scroll',()=>{tbFx();clearTimeout(set);set=setTimeout(settle,170)},{passive:true});
+  if('onscrollend' in window)TBT.addEventListener('scrollend',()=>{clearTimeout(set);settle()});
+  TBT.addEventListener('touchstart',()=>{touch=true},{passive:true});
+  TBT.addEventListener('touchend',()=>{touch=false;tbProg=0;clearTimeout(set);set=setTimeout(settle,220)},{passive:true});
+  const step=k=>{const i=B.findIndex(b=>b.classList.contains('on')),j=Math.max(0,Math.min(B.length-1,i+k));if(j!==i)show(B[j].dataset.t)};
+  $('#tb .tba.l').onclick=()=>step(-1);$('#tb .tba.r').onclick=()=>step(1);
+  TBT.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){e.preventDefault();step(1);$('#tbt button.on').focus()}else if(e.key==='ArrowLeft'){e.preventDefault();step(-1);$('#tbt button.on').focus()}});
+  addEventListener('resize',()=>{meas();tbFx()});document.fonts&&document.fonts.ready.then(()=>{meas();tbFx()});meas();fx()})();
 /* ---------- эквалайзер в шапке ---------- */
 (function(){const cv=$('#eq'),cx=cv.getContext('2d');let W,H,t=0,vis=true;const lite=!matchMedia('(hover:hover)').matches;const size=()=>{W=cv.clientWidth;H=cv.clientHeight;cv.width=W;cv.height=H};size();addEventListener('resize',size);
   new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe(cv);
@@ -463,5 +514,29 @@ const h=location.hash.slice(1);show(['les','chords','ref','tuner','metro','games
 </script>
 <script src="uroki.js"></script>
 <script src="/students.js" defer></script>
+<script>/* ---------- список учеников студии: всем - имя и класс; педагогу (вход по PIN) - полный список и заявки ---------- */
+(function(){const box=document.getElementById('stuL');if(!box)return;
+  const API='https://script.google.com/macros/s/AKfycbwmh9Ksw7lm9pYZCy3ao-mvZ5ogKbFM7E66zJIAa5ZvorA6q7FLH8ZlFZvFK9RKHRM-/exec';
+  const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const sess=()=>{try{return JSON.parse(sessionStorage.getItem('spectr_sess')||'null')}catch(e){return null}};
+  const call=async q=>(await fetch(API,{method:'POST',body:JSON.stringify(q)})).json();
+  const pl=(n,a,b,c)=>{n=Math.abs(n)%100;const m=n%10;return n>10&&n<20?c:m>1&&m<5?b:m===1?a:c};
+  let busy=false,at=0;
+  async function load(force){if(busy||(!force&&Date.now()-at<30000))return;busy=true;at=Date.now();if(!box.innerHTML)box.innerHTML='<h3>👥 Ученики студии</h3><p class="muted">Загружаю…</p>';
+    try{const S=sess();if(S&&S.token){const j=await call({op:'slist',token:S.token});if(j.ok){teach(j);return}}
+      const j=await call({op:'srate',club:'studio'});pub(j)}
+    catch(e){box.innerHTML='<h3>👥 Ученики студии</h3><p class="muted">Нет связи с сервером - попробуйте позже.</p>'}
+    finally{busy=false}}
+  function pub(j){const L=(j&&j.ok&&j.top||[]).slice().sort((a,b)=>String(a.n).localeCompare(String(b.n),'ru'));
+    box.innerHTML=`<h3>👥 Ученики студии <span class="stn">${L.length}</span></h3>`+(L.length?`<div class="stc">${L.map((x,i)=>`<span style="--d:${i}"><i>${E(String(x.n).charAt(0))}</i>${E(x.n)}, ${E(x.c)}</span>`).join('')}</div>`:'<p class="muted">Пока никого нет. Оставь заявку в рейтинг выше - после одобрения появишься здесь.</p>')}
+  function teach(j){const L=(j.list||[]).filter(x=>x.club==='studio'),ok=L.filter(x=>x.st==='принят').sort((a,b)=>(a.last+a.first).localeCompare(b.last+b.first,'ru')),w=L.filter(x=>x.st==='заявка');
+    box.innerHTML=`<h3>👥 Ученики студии <span class="stn">${ok.length}</span></h3><p class="muted" style="font-size:13px;margin:-4px 0 10px">Полный список видите только вы (вход по PIN). Гости видят только имя и класс.</p>`+
+      (w.length?`<div class="stw"><b>⏳ Ждут одобрения: ${w.length}</b>${w.map(x=>`<div class="str"><span>${E(x.first)} ${E(x.last)}, ${E(x.cls)}</span><button class="btn sm pri" data-id="${E(x.id)}" data-a="ok">✓ Принять</button><button class="btn sm" data-id="${E(x.id)}" data-a="no">✕</button></div>`).join('')}</div>`:'')+
+      (ok.length?`<div class="stt">${ok.map(x=>`<div class="str${x.hid?' hd':''}"><span><b>${E(x.last)} ${E(x.first)}</b>, ${E(x.cls)}${x.hid?' · скрыт в рейтинге':''}</span><span class="muted">⭐ ${(+x.site||0)+(+x.t||0)}</span><code title="личный код ученика">${E(x.code)}</code></div>`).join('')}</div>`:'<p class="muted">Принятых учеников пока нет.</p>');
+    box.querySelectorAll('button[data-a]').forEach(b=>b.onclick=async()=>{const S=sess();if(!S)return;b.disabled=true;
+      try{const r=await call({op:'sset',token:S.token,id:b.dataset.id,act:b.dataset.a});if(!r.ok)throw new Error(r.error||'ошибка');load(true)}catch(e){b.disabled=false;alert('Не получилось: '+e.message)}})}
+  const _show=window.show;if(typeof _show==='function')window.show=show=function(t){_show(t);if(t==='rate')load()};
+  if(location.hash==='#rate')load(true);
+})();</script>
 </body>
 </html>
