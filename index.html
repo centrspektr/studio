@@ -119,6 +119,9 @@ h2.sec em{font-style:normal;color:var(--pk)}
 .note{font:800 72px var(--fh);line-height:1;transition:color .3s}
 .note.ok{color:var(--ok);text-shadow:0 0 30px rgba(34,197,94,.6)}
 .note.dim{opacity:.35}
+.tsteps{align-self:stretch;text-align:left;margin:0 0 6px;padding:12px 14px 12px 34px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--line);font:500 14px/1.45 var(--fb);color:var(--dim)}.tsteps li{margin:3px 0}.tsteps b{color:var(--text)}
+.tmode button.dn::after{content:"✓";display:block;font:800 10px var(--fb);color:var(--ok)}
+#dock{display:none!important}
 .tadv{min-height:22px;font:800 16px var(--fb);color:#fb923c;transition:color .3s}.tadv.near{color:var(--yl,#facc15)}.tadv.ok{color:var(--ok)}
 .tmode{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}.tmode button{min-width:38px;height:40px;padding:0 7px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--dim);font:800 14px var(--fh);cursor:pointer;line-height:1.05;transition:.2s}.tmode button small{display:block;font:600 9px var(--fb)}.tmode button.on{background:var(--pk);border-color:transparent;color:#fff}.tmode button.cur{border-color:var(--ok);color:var(--text);box-shadow:0 0 12px rgba(34,197,94,.45)}
 .hz{font:700 15px var(--fb);color:var(--dim);font-variant-numeric:tabular-nums}
@@ -241,7 +244,7 @@ html.fx header{background:rgba(12,7,22,.95)}
   <div class="tab" id="t-tuner" hidden>
     <h2 class="sec">Тюнер <em>гитары</em></h2><p class="sub">Стандартный строй: E A D G B E. Разреши доступ к микрофону и дёрни одну струну.</p>
     <div class="grid2"><div class="card tuner">
-      <div class="dial"><svg viewBox="0 0 200 115"><defs><linearGradient id="dg" x1="0" x2="1"><stop offset="0" stop-color="#ef4444"/><stop offset=".42" stop-color="#facc15"/><stop offset=".5" stop-color="#22c55e"/><stop offset=".58" stop-color="#facc15"/><stop offset="1" stop-color="#ef4444"/></linearGradient></defs>
+      <ol class="tsteps"><li>Нажми <b>"Включить тюнер"</b> и разреши микрофон. В комнате должно быть тихо.</li><li>Дёрни <b>одну</b> струну и дай ей звучать. Начни с толстой (6-я, E).</li><li>Большая буква - это струна. Стрелка <b>слева</b> - звук ниже, подтяни колок. <b>Справа</b> - выше, ослабь.</li><li>Крути колок понемногу и дёргай струну снова. Зелёное <b>"✓ Настроено"</b> - переходи к следующей.</li></ol><div class="dial"><svg viewBox="0 0 200 115"><defs><linearGradient id="dg" x1="0" x2="1"><stop offset="0" stop-color="#ef4444"/><stop offset=".42" stop-color="#facc15"/><stop offset=".5" stop-color="#22c55e"/><stop offset=".58" stop-color="#facc15"/><stop offset="1" stop-color="#ef4444"/></linearGradient></defs>
         <path d="M15 105 A85 85 0 0 1 185 105" fill="none" stroke="url(#dg)" stroke-width="10" stroke-linecap="round" opacity=".85"/>
         <g id="ticks"></g><line id="needle" x1="100" y1="105" x2="100" y2="28" stroke="#fff" stroke-width="3" stroke-linecap="round" style="transition:transform .15s;transform-origin:100px 105px"/><circle cx="100" cy="105" r="7" fill="#ff2d8a"/></svg></div>
       <div class="note" id="tNote">-</div><div class="tadv" id="tAdv"></div><div class="hz" id="tHz">нажми "Включить тюнер"</div><div class="tmode" id="tMode" aria-label="Какую струну настраиваем"></div>
@@ -408,7 +411,7 @@ function yin(buf,sr){let rms=0;for(let i=0;i<buf.length;i++)rms+=buf[i]*buf[i];r
   let tau=-1;for(let t=tMin;t<=tMax;t++)if(c[t]<.15){while(t+1<=tMax&&c[t+1]<c[t])t++;tau=t;break}
   if(tau<0)return 0;const a=c[tau-1],b=c[tau],e=c[tau+1],den=a-2*b+e,sh=den?(a-e)/(2*den):0;return r/(tau+(Math.abs(sh)<1?sh:0))}
 /* тюнер гитары: сам находит струну, стрелка плавная, от шума не дёргается */
-const T={lock:-1,str:-1,cand:-1,candN:0,hist:[],last:0,val:0,ndl:0,okSince:0,fr:0,f:0};
+const T={lock:-1,str:-1,cand:-1,candN:0,hist:[],last:0,val:0,ndl:0,okSince:0,fr:0,f:0,peak:0,odd:0,done:{}};
 const cOf=(f,t)=>1200*Math.log2(f/t);
 function tPick(f){ // струна и частота с поправкой на октаву (часто ловится 2-я гармоника)
   const near=g=>{let k=0,m=1e9;OPEN.forEach((o,i)=>{const d=Math.abs(cOf(g,o));if(d<m){m=d;k=i}});return k};
@@ -417,13 +420,18 @@ function tPick(f){ // струна и частота с поправкой на 
   if(T.lock<0){s=near(f);if(s!==T.str){if(s===T.cand)T.candN++;else{T.cand=s;T.candN=1}if(T.str>=0&&T.candN<3)s=T.str;else{T.str=s;T.hist=[]}}}else T.str=s;
   return [s,f]}
 function tTick(){tRaf=requestAnimationFrame(tTick);const now=performance.now();
-  if(tAn&&(T.fr++&1)===0){tAn.getFloatTimeDomainData(tBuf);const f=yin(tBuf,AC.sampleRate);
-    if(f>60&&f<1100){const [s,g]=tPick(f);T.f=g;T.hist.push(cOf(g,OPEN[s]));if(T.hist.length>5)T.hist.shift();const h=[...T.hist].sort((x,y)=>x-y);T.val=h[h.length>>1];T.last=now;tShow(now)}}
+  if(tAn&&(T.fr++&1)===0){tAn.getFloatTimeDomainData(tBuf);let e=0;for(let i=0;i<tBuf.length;i++)e+=tBuf[i]*tBuf[i];e=Math.sqrt(e/tBuf.length);
+    // громкость струны: новый щипок поднимает пик; когда звук затух до 8% от пика - больше не меряем (там ошибки)
+    T.peak=Math.max(e,T.peak*.985);const f=e>T.peak*.08?yin(tBuf,AC.sampleRate):0;
+    if(f>60&&f<1100){const [s,g]=tPick(f),c=cOf(g,OPEN[s]);
+      // одиночный выброс (скачок больше 60 центов) пропускаем, если он не повторился
+      if(T.hist.length>=3&&Math.abs(c-T.val)>60&&++T.odd<3){}else{T.odd=0;T.f=g;T.hist.push(c);if(T.hist.length>7)T.hist.shift();
+        const h=[...T.hist].sort((x,y)=>x-y),k=h.length>4?1:0,m=h.slice(k,h.length-k);T.val=m.reduce((x,y)=>x+y,0)/m.length;T.last=now;tShow(now)}}}
   const live=now-T.last<1300,tg=live?Math.max(-50,Math.min(50,T.val)):0;T.ndl+=(tg-T.ndl)*(RED?1:.16);
   $('#needle').style.transform=`rotate(${(T.ndl/50*80).toFixed(2)}deg)`;
   if(!live&&T.str>=0&&!$('#tNote').classList.contains('dim')){$('#tNote').classList.add('dim');$('#tHz').textContent='дёрни струну ещё раз';$('#tAdv').textContent='';T.okSince=0}}
 function tShow(now){const s=T.str,c=T.val,ok=Math.abs(c)<=4,m=12*Math.log2(T.f/440)+69,r=Math.round(m),nm=NOTES[(r%12+12)%12]+(Math.floor(r/12)-1);
-  if(ok){if(!T.okSince)T.okSince=now}else T.okSince=0;const done=ok&&now-T.okSince>500;
+  if(ok){if(!T.okSince)T.okSince=now}else T.okSince=0;const done=ok&&now-T.okSince>500;if(done&&!T.done[s]){T.done[s]=1;$$('#tMode button').forEach(b=>b.classList.toggle('dn',!!T.done[+b.dataset.m]))}
   const n=$('#tNote');n.textContent=SN[s];n.classList.remove('dim');n.classList.toggle('ok',ok);
   $('#tHz').textContent=`${nm} · ${T.f.toFixed(1)} Гц · ${c>0?'+':''}${Math.round(c)} центов`;
   $('#tAdv').textContent=done?'✓ Настроено':Math.abs(c)>60?(c<0?'Сильно ниже - подтяни струну':'Сильно выше - ослабь струну'):ok?'Почти точно, держи…':c<0?'Ниже - подтяни струну':'Выше - ослабь струну';
