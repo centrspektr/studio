@@ -568,7 +568,7 @@ const h=location.hash.slice(1);show(['les','put','chords','ref','tuner','metro',
 <script src="/students.js" defer></script>
 <script>/* ---------- список учеников студии: всем - имя и класс; педагогу (вход по PIN) - полный список и заявки ---------- */
 (function(){const box=document.getElementById('stuL');if(!box)return;
-  const API='https://script.google.com/macros/s/AKfycbwmh9Ksw7lm9pYZCy3ao-mvZ5ogKbFM7E66zJIAa5ZvorA6q7FLH8ZlFZvFK9RKHRM-/exec';
+  const API='https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b';
   const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const sess=()=>{try{return JSON.parse(sessionStorage.getItem('spectr_sess')||'null')}catch(e){return null}};
   const call=async q=>(await fetch(API,{method:'POST',body:JSON.stringify(q)})).json();

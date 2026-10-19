@@ -3,7 +3,7 @@
    Уроки хранятся на общем сервере (лист "Уроки", файл lessons.gs); пока сервер пуст - показывается стандартный курс. */
 (function () {
 'use strict';
-const API = 'https://script.google.com/macros/s/AKfycbwmh9Ksw7lm9pYZCy3ao-mvZ5ogKbFM7E66zJIAa5ZvorA6q7FLH8ZlFZvFK9RKHRM-/exec';
+const API = 'https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b';
 const CLUB = 'studio';
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
