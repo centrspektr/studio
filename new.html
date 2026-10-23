@@ -6,11 +6,13 @@
 <title>Гитара и ИИ-студия - СПЕКТР</title>
 <meta name="description" content="Азы гитары, тренажёр аккордов, тюнер, метроном и создание музыки с помощью ИИ. Ресурсный центр СПЕКТР.">
 <meta name="theme-color" content="#0c0716">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>/* в студию всегда входим в Неоне; 🎨 меняет стиль только на этот визит, выбор на портале не трогаем */
 (function(){var R=document.documentElement,K='studio_skin',cur='neon',subs=[];try{cur=sessionStorage.getItem(K)||'neon'}catch(e){}R.dataset.skin=cur;
 window.SKIN={get:function(){return cur},on:function(f){subs.push(f)},set:function(k){cur=k;R.dataset.skin=k;try{sessionStorage.setItem(K,k)}catch(e){}subs.forEach(function(f){try{f(k)}catch(e){}})}}})();</script>
-<script src="/fx.js"></script>
+<script src="fx.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@600;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
@@ -215,7 +217,7 @@ html.fx header{background:rgba(12,7,22,.95)}
 </head>
 <body>
 <header><div class="wrap top">
-  <a class="back" href="../">← СПЕКТР</a><span class="brand">Гитара · ИИ-студия</span>
+  <a class="back" href="https://centrspektr.github.io/">← СПЕКТР</a><span class="brand">Гитара · ИИ-студия</span>
   <button class="skb" data-fx-skin title="Сменить живой фон" aria-label="Сменить фон">🎨</button><nav class="tb" id="tb" aria-label="Разделы студии"><button class="tba l" type="button" aria-label="Предыдущий раздел">‹</button><div class="tbt" id="tbt"><button data-t="les" class="on" style="--c:#facc15"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.6C5.6 4 8.6 4 12 6.2c3.4-2.2 6.4-2.2 9-.6V19c-2.6-1.5-5.6-1.5-9 .6-3.4-2.1-6.4-2.1-9-.6z"/><path d="M12 6.2v13.4"/></svg></span><b>Уроки</b></button><button data-t="kurs" style="--c:#a78bfa"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c1.6 1.6 3.4 2.4 5.5 2.4s3.9-.8 5.5-2.4v-5"/><path d="M21.5 9v5.5"/></svg></span><b>Курс</b></button><button data-t="put" style="--c:#22c55e"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></svg></span><b>Путь</b></button><button data-t="chords" style="--c:#ff2d8a"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.2 9.8 6-6"/><path d="m18.4 2.4 3.2 3.2"/><path d="M11.6 8.3c-1.7-.6-3.6-.3-4.8 1-.8.8-1.1 1.9-1.1 3-1.6.2-3 .9-3.6 2.2-1 2.1.2 4.8 2.5 6.1 2.4 1.3 5.3.9 6.4-1 .6-1.1.6-2.5.1-3.7 1.1-.1 2.1-.4 2.8-1.1 1.3-1.3 1.6-3.2 1-4.8"/><circle cx="9.4" cy="14.6" r="1.7"/></svg></span><b>Аккорды</b></button><button data-t="ref" style="--c:#22d3ee"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.6"/><path d="M9.2 4V2.8h5.6V4"/><path d="M8.6 10h6.8M8.6 13.5h6.8M8.6 17h4"/></svg></span><b>Шпаргалка</b></button><button data-t="tuner" style="--c:#22c55e"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 17.2a8.4 8.4 0 1 1 16.8 0"/><path d="m12 17.2 4.2-6.4"/><circle cx="12" cy="17.2" r="1.5"/><path d="M12 6.4v1.6M6.1 9.4l1.1 1.1M17.9 9.4l-1.1 1.1"/></svg></span><b>Тюнер</b></button><button data-t="metro" style="--c:#fb923c"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l4.2 18H4.8z"/><path d="m12 15.2 5.2-9.4"/><path d="M7.3 15.2h9.4"/></svg></span><b>Метроном</b></button><button data-t="games" style="--c:#a78bfa"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h10a4 4 0 0 1 3.9 3.1l.9 4.3a2.6 2.6 0 0 1-4.7 2l-1.6-2.4H8.5l-1.6 2.4a2.6 2.6 0 0 1-4.7-2l.9-4.3A4 4 0 0 1 7 8z"/><path d="M8 10.5v3M6.5 12h3"/><circle cx="15.6" cy="11" r=".6"/><circle cx="17.6" cy="13" r=".6"/></svg></span><b>Игры</b></button><button data-t="ai" style="--c:#f472b6"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 18V6.2l10-2.2v12"/><circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/><path d="M4.2 3.2l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"/></svg></span><b>Музыка с ИИ</b></button><button data-t="rate" style="--c:#fde047"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M16 5.6h3V7a3 3 0 0 1-3 3M8 5.6H5V7a3 3 0 0 0 3 3"/><path d="M12 13v3.6M9 20.6h6M9.8 16.6h4.4l.5 4h-5.4z"/></svg></span><b>Рейтинг</b></button></div><button class="tba r" type="button" aria-label="Следующий раздел">›</button></nav>
 </div></header>
 <main class="wrap">
@@ -223,9 +225,7 @@ html.fx header{background:rgba(12,7,22,.95)}
     <div class="hin"><small>РЕСУРСНЫЙ ЦЕНТР СПЕКТР</small><h1>Гитара и <span>ИИ</span>-студия</h1><p>Учимся по урокам: бой, перебор, аккорды и немного нот. Тюнер и метроном всегда под рукой, а свои треки создаём вместе с нейросетями.</p>
       <div class="stats"><span id="stA">🎸 выучено 0 аккордов</span><span id="stB">⚡ рекорд смен: -</span></div></div></section>
 
-  <div class="tab" id="t-les"></div>
-
-  <div class="tab" id="t-kurs" hidden></div>
+  <div class="tab" id="t-les"></div> <div class="tab" id="t-kurs" hidden></div>
 
   <div class="tab" id="t-put" hidden></div>
   <div class="tab" id="t-chords" hidden>
@@ -567,7 +567,7 @@ renderChords();renderTrPick();trShow();renderPB();renderMood();saveST();
 const h=location.hash.slice(1);show(['les','kurs','put','chords','ref','tuner','metro','games','ai','rate'].includes(h)?h:'les');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
 </script>
 <script src="uroki.js"></script>
-<script src="/students.js" defer></script>
+<script src="students.js" defer></script>
 <script>/* ---------- список учеников студии: всем - имя и класс; педагогу (вход по PIN) - полный список и заявки ---------- */
 (function(){const box=document.getElementById('stuL');if(!box)return;
   const API='https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b';
@@ -592,18 +592,8 @@ const h=location.hash.slice(1);show(['les','kurs','put','chords','ref','tuner','
   const _show=window.show;if(typeof _show==='function')window.show=show=function(t){_show(t);if(t==='rate')load()};
   if(location.hash==='#rate')load(true);
 })();</script>
-<script src="/oshibka.js" data-site="studio" defer></script>
-<script src="/put.js" data-site="studio" defer></script>
-<script>
-/* Курс "Гитара и ИИ" (вкладка "Курс"): настройки движка kurs-moduli.js */
-window.KURSY={name:'Гитара и ИИ',org:'ИИ-студия',club:'studio',api:'https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b',
-  store:'st_kurs',meKey:'spk_studio',open:['m0','m1','m2','m3','m4','m5','m6'],beta:0,grp:' студии',
-  words:[['Тренер','Педагог'],['тренер','педагог'],['ТРЕНЕР','ПЕДАГОГ']],pinText:'Нужен PIN портала СПЕКТР (тот же, что для заявок).',
-  bar:'header',tabs:'#tbt',role:'st_role'};
-const MODE=(()=>{try{return sessionStorage.getItem('st_role')==='coach'?'coach':'public'}catch(e){return 'public'}})();
-</script>
-<script src="kurs-zadaniya.js" defer></script>
-<script src="kurs-igry.js" defer></script>
-<script src="kurs-moduli.js" defer></script>
+<script src="oshibka.js" data-site="studio" defer></script>
+<script src="put.js" data-site="studio" defer></script><script>window.KURSY={name:'Гитара и ИИ',org:'ИИ-студия',club:'studio',api:'https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b',store:'st_kurs',meKey:'spk_studio',open:['m0','m1'],beta:0,note:'🧪 Курс в тестировании: счётчик очков может обнуляться. Сейчас открыты модули 0 и 1, следующие откроет педагог.',grp:' студии',words:[['Тренер','Педагог'],['тренер','педагог'],['ТРЕНЕР','ПЕДАГОГ']],pinText:'Нужен PIN портала СПЕКТР (тот же, что для заявок).',bar:'header',tabs:'#tbt',role:'st_role',rate:true,pause:20};window.SPK_RESET=function(){try{localStorage.removeItem('studio_prog')}catch(e){}try{ST.got=[];ST.best=0;ST.ear=0;ST.rh=0}catch(e){}};const MODE=(()=>{try{return sessionStorage.getItem('st_role')==='coach'?'coach':'public'}catch(e){return 'public'}})();</script><script src="kurs-zadaniya.js" defer></script><script src="kurs-igry2.js" defer></script><script src="kurs-moduli4.js" defer></script>
+<script>if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});</script>
 </body>
 </html>
