@@ -637,7 +637,8 @@ body.anim .mixer{animation-delay:.06s}body.anim #deckB{animation-delay:.12s}
 body.noanim *,body.noanim *:before,body.noanim *:after{animation:none!important;transition:none!important}
 /* "Лёгкая графика": no blur, glow or live background - for weak PCs */
 body.lite *,body.lite *:before,body.lite *:after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;animation:none!important;transition:none!important}
-body.lite:before,body.lite .skBg{display:none!important}
+body.lite:before,body.lite .skBg,body.lite[data-skin=space]:after{display:none!important}
+#ecoBtn.on{color:#3ddc97;border-color:color-mix(in srgb,#3ddc97 55%,transparent)}
 body.lite .panel,body.lite .plIn,body.lite header{box-shadow:none!important}
 body.lite .uiDrawer,body.lite #nfDrawer,body.lite .dlg,body.lite .toast,body.lite .fxWin,body.lite .gWin{background:var(--sk-panel-solid,#111317)!important}
 @keyframes twinkle{50%{opacity:.45}}
@@ -1332,7 +1333,8 @@ body.mob .trk{min-height:44px}
   <button id="gBtn" class="sm" title="Отдельное окно гитары"><i data-ic="guitar"></i>Гитара</button>
   <button id="skinBtn" class="sm" title="Выбрать стиль оформления"><i data-ic="palette"></i>Стиль</button>
   <button id="uiBtn" class="sm" title="Что показывать и где"><i data-ic="layout"></i>Интерфейс</button>
-  <div class="laysw"><span>Пэды:</span><button data-lay="bottom">Снизу</button><button data-lay="side">Сбоку</button><button data-lay="float">Окно</button></div>
+  <button id="ecoBtn" class="sm" title="Экономный режим: меньше нагрузка на процессор и видеокарту, вентилятор тише. Звук не меняется"><i data-ic="leaf"></i>Эконом</button>
+  <button id="padsBtn" class="sm" title="Показать или спрятать окно пэдов. Окно перетаскивается за заголовок"><i data-ic="pads"></i>Пэды</button>
   <div class="laysw outbox hidden" id="outBox" title="Куда идет звук: звуковая карта или пульт (например Ui24R)"><span>Выход:</span><select id="outSel"></select><select id="outCh" class="hidden" title="Какие каналы звуковой карты"></select></div>
 </header>
 
@@ -1473,6 +1475,8 @@ body.mob .trk{min-height:44px}
         <div class="uiTog" data-o="anim"><span>Анимации интерфейса</span><i class="sw"></i></div>
       </div>
       <div class="uiGroup" style="margin-top:8px">
+        <div class="uiTog" data-o="eco"><span>Экономный режим (одной кнопкой)</span><i class="sw"></i></div>
+        <div class="uiNote" style="margin:0 0 8px">Лёгкая графика, волны и индикаторы обновляются реже, большой буфер звука, новые песни разбираются, когда деки молчат. Стиль и звук остаются.</div>
         <div class="uiTog" data-o="lite"><span>Лёгкая графика (для слабых ПК)</span><i class="sw"></i></div>
         <div class="uiNote" style="margin:0 0 8px">Убирает размытие стекла, свечение и живой фон. Звук не меняется, компьютеру легче.</div>
         <div class="gt">Буфер звука</div>
@@ -1510,11 +1514,14 @@ const ic=n=>`<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentCol
 Object.assign(ICP,{palette:'<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.9-.7-1.3-.7-2.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="11" r="1.2" fill="currentColor"/>',
 layout:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>',
 eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+leaf:'<path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15"/><path d="M5 19c3-4 6-7 10-9"/>',
 eyeOff:'<path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'});
 const hydrate=(r=document)=>r.querySelectorAll('i[data-ic]').forEach(i=>{i.outerHTML=ic(i.dataset.ic);});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const AC=window.AudioContext||window.webkitAudioContext;
 /* audio buffer: bigger = no stutter on weak PCs, smaller = faster response. Setting "Буфер звука" (dj-lat), applied after restart */
+/* "Эконом" (dj-eco): лёгкая графика + перерисовка 30 раз в секунду + холсты без ретины + большой буфер. Переключает setEco() в блоке стилей */
+const ECO={on:(()=>{try{return localStorage.getItem('dj-eco')==='1';}catch(e){return false;}})()};
 const LAT={s:0.012,m:0.04,l:0.09},latSel=(()=>{try{const v=localStorage.getItem('dj-lat');return LAT[v]?v:'m';}catch(e){return 'm';}})();
 const ctx=(()=>{try{return new AC({latencyHint:LAT[latSel]});}catch(e){return new AC();}})();
 const decode=ab=>new Promise((res,rej)=>ctx.decodeAudioData(ab,res,rej));
@@ -2289,6 +2296,7 @@ async function addTracks(files,list,deck){
   for(const t of fresh){if(deck&&first){first=false;await deck.loadTrack(t);continue;}await analyzeTrack(t);}
 }
 async function analyzeTrack(t){
+  while(ECO.on&&typeof decks!=='undefined'&&decks.some(d=>d.playing))await new Promise(r=>setTimeout(r,3000));
   try{const buf=await decode(await t.blob.arrayBuffer());await ensureAnalysis(t,buf);t.status='';}
   catch(e){t.status='не читается';}
   renderLists();
@@ -2732,7 +2740,7 @@ class Deck{
   updateEchoTime(){const t=clamp(this.echoBeats*60/((this.bpm||120)*this.tempoFactor()),0.03,3.9),c=ctx.currentTime,d=this.dl.delayTime;
     if(!this._sg||this._sg.echo)d.setTargetAtTime(t,c,0.05);else{d.cancelScheduledValues(c);d.setValueAtTime(t,c);}this.rackTimes();}
   drawLive(){const c=this.liveC;if(!c||this.fxEl.classList.contains('hidden'))return;this.drawXY();
-    const dpr=window.devicePixelRatio||1,w=Math.round(c.clientWidth*dpr),h=Math.round(c.clientHeight*dpr);if(!w||!h)return;if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
+    const dpr=ECO.on?1:(window.devicePixelRatio||1),w=Math.round(c.clientWidth*dpr),h=Math.round(c.clientHeight*dpr);if(!w||!h)return;if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
     const x=c.getContext('2d');x.clearRect(0,0,w,h);const fmin=30,fmax=16000,fx=f=>Math.log(f/fmin)/Math.log(fmax/fmin)*w,mid=h*0.5,dbY=db=>mid-clamp(db,-18,18)/18*(h*0.42);
     x.font=(9*dpr)+'px sans-serif';
     [100,1000,10000].forEach(f=>{x.fillStyle='rgba(255,255,255,.06)';x.fillRect(fx(f),0,1,h);x.fillStyle='#4a5060';x.fillText(f>=1000?f/1000+'k':String(f),fx(f)+2*dpr,h-3*dpr);});
@@ -3377,18 +3385,19 @@ class Deck{
     if(Math.abs(jn)>0.002||this.jogN!==0){this.jogN=Math.abs(jn)>0.002?jn:0;this.applyRate();}
     this.advance();
     if(this.playing&&this.jog==null)this.angle+=200*dt*this.curRate();
-    this.discIn.style.transform=`rotate(${this.angle%360}deg)`;
+    {const a=this.angle%360;if(a!==this._da){this._da=a;this.discIn.style.transform=`rotate(${a}deg)`;}}
     if(this.playing||this.dirty){this.curEl.textContent=mmss(this.pos);this.draw();this.dirty=false;}
     this.loopSched();this.scheduleGuitar();this.updateGuitarUI();
   }
-  sizeC(c){const dpr=window.devicePixelRatio||1,[cw,ch]=cvSize(c),w=Math.round(cw*dpr),h=Math.round(ch*dpr);if(w&&h&&(c.width!==w||c.height!==h)){c.width=w;c.height=h;}return [w,h,dpr];}
+  sizeC(c){const dpr=ECO.on?1:(window.devicePixelRatio||1),[cw,ch]=cvSize(c),w=Math.round(cw*dpr),h=Math.round(ch*dpr);if(w&&h&&(c.width!==w||c.height!==h)){c.width=w;c.height=h;}return [w,h,dpr];}
   draw(){
     const dur=this.buffer?this.buffer.duration:(this.track&&this.track.duration)||0;
     {const c=this.zoom,cx=this.zx,[w,h,dpr]=this.sizeC(c);if(w&&h){cx.clearRect(0,0,w,h);const mid=h/2,win=6,t0=this.pos-win/2;
       const lp=this.roll||this.loop;
       if(lp){const x1=(lp.start-t0)/win*w,x2=(lp.end-t0)/win*w;cx.fillStyle=this.roll?'rgba(255,255,255,.16)':WP.loop;cx.fillRect(x1,0,x2-x1,h);}
-      if(this.hi){const step=2*dpr,gw=step-(+WP.gap||0.5)*dpr,env=WP.env?[]:null;for(let x=0;x<w;x+=step){const t=t0+x/w*win;if(t<0||t>=dur)continue;const v=Math.max(0.5,this.hi[Math.floor(t*100)]*(mid-2));
-          if(env)env.push(x+gw/2,v);cx.fillStyle=t<this.pos?this.color:WP.rest;cx.fillRect(x,mid-v,gw,v*2);}
+      if(this.hi){const step=2*dpr,gw=step-(+WP.gap||0.5)*dpr,env=WP.env?[]:null,pa=new Path2D(),pb=new Path2D();for(let x=0;x<w;x+=step){const t=t0+x/w*win;if(t<0||t>=dur)continue;const v=Math.max(0.5,this.hi[Math.floor(t*100)]*(mid-2));
+          if(env)env.push(x+gw/2,v);(t<this.pos?pa:pb).rect(x,mid-v,gw,v*2);}
+        cx.fillStyle=this.color;cx.fill(pa);cx.fillStyle=WP.rest;cx.fill(pb);
         if(env&&env.length>3){cx.beginPath();for(let i=0;i<env.length;i+=2)cx.lineTo(env[i],mid-env[i+1]);for(let i=env.length-2;i>=0;i-=2)cx.lineTo(env[i],mid+env[i+1]);cx.closePath();
           cx.strokeStyle=WP.env==='c'?this.color:WP.env;cx.globalAlpha=0.55;cx.lineWidth=dpr;cx.stroke();cx.globalAlpha=1;}}
       if(this.bpm&&dur){const per=this.period,o=this.offset;for(let k=Math.ceil((t0-o)/per);;k++){const t=o+k*per;if(t>t0+win)break;if(t<0)continue;
@@ -3401,7 +3410,10 @@ class Deck{
       if(!this.track){cx.fillStyle='#555b6b';cx.font=(11*dpr)+'px sans-serif';cx.textAlign='center';cx.fillText('Выбери трек в плейлисте или перетащи файл на деку',w/2,mid+4*dpr);cx.textAlign='left';}}}
     {const c=this.canvas,cx=this.cx,[w,h,dpr]=this.sizeC(c);if(w&&h){cx.clearRect(0,0,w,h);const pos=dur?this.pos/dur:0,mid=h/2;
       const pk=this.track&&this.track.peaks;
-      if(pk){const n=pk.length,bw=w/n;for(let i=0;i<n;i++){const v=Math.max(0.5,pk[i]*(mid-1));cx.fillStyle=i/n<pos?this.color:WP.ov;cx.fillRect(i*bw,mid-v,Math.max(1,bw-0.5),v*2);}}
+      if(pk){const key=w+'|'+h+'|'+this.color+'|'+WP.ov;
+        if(this._ovK!==key||this._ovP!==pk){this._ovK=key;this._ovP=pk;const n=pk.length,bw=w/n,mk=col=>{const o=document.createElement('canvas');o.width=w;o.height=h;const g=o.getContext('2d');g.fillStyle=col;
+            for(let i=0;i<n;i++){const v=Math.max(0.5,pk[i]*(mid-1));g.fillRect(i*bw,mid-v,Math.max(1,bw-0.5),v*2);}return o;};this._ovR=mk(WP.ov);this._ovA=mk(this.color);}
+        cx.drawImage(this._ovR,0,0);const px=Math.round(pos*w);if(px>0)cx.drawImage(this._ovA,0,0,px,h,0,0,px,h);}
       else{cx.fillStyle=WP.ov;cx.fillRect(0,mid-1,w,2);}
       if(dur){const lp=this.loop;if(lp){cx.fillStyle=WP.loop2;cx.fillRect(lp.start/dur*w,0,Math.max(2,(lp.end-lp.start)/dur*w),h);}
         this.cues.forEach(q=>{if(q==null)return;cx.fillStyle=WP.cue;cx.fillRect(q/dur*w-dpr,0,2*dpr,h);});
@@ -3821,8 +3833,11 @@ function setLayout(l,save=true){
   if(save)store.set('dj-layout',l);decks.forEach(d=>d.dirty=true);
 }
 document.querySelectorAll('.laysw button').forEach(b=>b.addEventListener('click',()=>setLayout(b.dataset.lay)));
-$('#padClose').addEventListener('click',()=>body.classList.add('pads-closed'));
-$('#fab').addEventListener('click',()=>body.classList.remove('pads-closed'));
+// pads: one header button opens / hides the floating pads window (the old "bottom / side" places are gone)
+const padsBtn=$('#padsBtn'),padsOpen=o=>{body.classList.toggle('pads-closed',!o);padsBtn.classList.toggle('on',o);store.set('dj-pads-open',o?'1':'0');decks.forEach(d=>d.dirty=true);};
+padsBtn.addEventListener('click',()=>padsOpen(body.classList.contains('pads-closed')));
+$('#padClose').addEventListener('click',()=>padsOpen(false));
+$('#fab').addEventListener('click',()=>padsOpen(true));
 (()=>{const h=$('#phead');let sx,sy,ox,oy,drag=false;
   const pos=store.get('dj-float');if(pos){try{const [x,y]=JSON.parse(pos);padsWrap.style.setProperty('--fx',x+'px');padsWrap.style.setProperty('--fy',y+'px');}catch(e){}}
   h.addEventListener('pointerdown',e=>{if(!body.classList.contains('lay-float')||e.target.closest('button'))return;
@@ -3832,7 +3847,7 @@ $('#fab').addEventListener('click',()=>body.classList.remove('pads-closed'));
   const end=()=>{if(!drag)return;drag=false;const r=padsWrap.getBoundingClientRect();store.set('dj-float',JSON.stringify([Math.round(r.left),Math.round(r.top)]));};
   ['pointerup','pointercancel'].forEach(t=>h.addEventListener(t,end));
 })();
-setLayout(store.get('dj-layout')||(window.innerWidth>=1500?'side':'bottom'),false);
+setLayout('float',false);padsOpen(store.get('dj-pads-open')==='1');
 
 /* ---------- restore saved tracks and pads ---------- */
 renderLists();
@@ -3857,18 +3872,20 @@ renderLists();
 /* ---------- animation loop ---------- */
 const meter=$('#meter'),mcx=meter.getContext('2d'),mbuf=new Float32Array(analyser.fftSize),pbuf=new Float32Array(preAn.fftSize),lvlInfo={el:$('#lvlInfo')};let peakHold=0,last=performance.now();
 function frame(now){
+  if(ECO.on&&now-last<31){requestAnimationFrame(frame);return;}
   const dt=Math.min(0.1,(now-last)/1000);last=now;
   decks.forEach(d=>{d.tick(dt);d.drawLive();});
   if(GW.open)drawGTL();
   if(recorder)$('#recT').textContent=mmss((now-recT0)/1000);
-  const dpr=window.devicePixelRatio||1,[mw0,mh0]=cvSize(meter),w=Math.round(mw0*dpr),h=Math.round(mh0*dpr);
-  if(w&&h){
-    if(meter.width!==w||meter.height!==h){meter.width=w;meter.height=h;}
+  const dpr=ECO.on?1:(window.devicePixelRatio||1),[mw0,mh0]=cvSize(meter),w=Math.round(mw0*dpr),h=Math.round(mh0*dpr);
+  if(w&&h&&(!ECO.on||now-(meter._t||0)>62)){meter._t=now;
+    if(meter.width!==w||meter.height!==h){meter.width=w;meter.height=h;meter._z=false;}
     analyser.getFloatTimeDomainData(mbuf);let m=0;for(const v of mbuf){const a=Math.abs(v);if(a>m)m=a;}
-    const lvl=Math.min(1,m);peakHold=Math.max(lvl,peakHold-0.008);
-    mcx.clearRect(0,0,w,h);const seg=Math.max(4,Math.round(6*dpr)),gap=Math.round(2*dpr),n=Math.floor(w/(seg+gap));
+    const lvl=Math.min(1,m);peakHold=Math.max(lvl,peakHold-0.008*(ECO.on?4:1));
+    const z=lvl<1e-5&&peakHold<1e-5,skip=z&&meter._z;meter._z=z;
+    if(!skip){mcx.clearRect(0,0,w,h);const seg=Math.max(4,Math.round(6*dpr)),gap=Math.round(2*dpr),n=Math.floor(w/(seg+gap));
     for(let i=0;i<n;i++){const f=i/n;mcx.fillStyle=f<lvl?(f<0.65?'#3ddc97':f<0.85?'#ffd23f':'#ff5a5f'):'#1c1f27';mcx.fillRect(i*(seg+gap),0,seg,h);}
-    mcx.fillStyle='#fff';mcx.fillRect(Math.min(w-2,peakHold*w),0,2,h);
+    mcx.fillStyle='#fff';mcx.fillRect(Math.min(w-2,peakHold*w),0,2,h);}
     if(now-(lvlInfo.t||0)>250){lvlInfo.t=now;preAn.getFloatTimeDomainData(pbuf);let pm=0;for(const v of pbuf){const a=Math.abs(v);if(a>pm)pm=a;}
       const red=limRed(),el=lvlInfo.el,db=v=>v>1e-4?(20*Math.log10(v)).toFixed(1):'-∞';
       if(red>6||pm>2){lvlInfo.hot=now;}const hot=now-(lvlInfo.hot||-1e9)<1500;
@@ -3924,7 +3941,7 @@ const MIX_BLK=[
   ['rec','Запись и уровень',()=>mixbody.querySelector(':scope>.recbox'),1,1]];
 const GLOBAL_BLK=[
   ['plA','Плейлист A',()=>$('#plA')],['plB','Плейлист B',()=>$('#plB')],
-  ['pads','Пэды',null],['laysw','Переключатель места пэдов',()=>$('.laysw')],
+  ['pads','Пэды',null],['laysw','Кнопка "Пэды"',()=>$('#padsBtn')],
   ['gbtn','Кнопка "Гитара"',()=>$('#gBtn')],['sub','Подзаголовок',()=>$('.brand .sub')],['foot','Подсказка внизу',()=>$('.foot')]];
 
 function chip(e,grp,k,label,move,hide){
@@ -3958,7 +3975,8 @@ function toggleHidden(key){const i=UI.hidden.indexOf(key);if(i<0)UI.hidden.push(
 function applyMix(){board.classList.remove('mix-left','mix-center','mix-right','mix-off');board.classList.add('mix-'+UI.mix);
   document.querySelectorAll('#uiMix button').forEach(b=>b.classList.toggle('on',b.dataset.v===UI.mix));redraw();}
 function applyScale(){const s=UI.scale/100;document.documentElement.style.zoom=s===1?'':String(s);document.documentElement.style.setProperty('--z',String(s));const v=$('#uiScaleV');if(v)v.textContent=UI.scale+'%';redraw();DRAGS.forEach(w=>w._place&&w._place());}
-function applyAnim(){const a=UI.anim&&!UI.lite;B.classList.toggle('anim',a);B.classList.toggle('noanim',!a);B.classList.toggle('lite',!!UI.lite);document.querySelectorAll('.uiTog[data-o=anim]').forEach(t=>t.classList.toggle('on',UI.anim));document.querySelectorAll('.uiTog[data-o=lite]').forEach(t=>t.classList.toggle('on',!!UI.lite));}
+function applyAnim(){const L=!!UI.lite||ECO.on,a=UI.anim&&!L;B.classList.toggle('anim',a);B.classList.toggle('noanim',!a);B.classList.toggle('lite',L);B.classList.toggle('eco',ECO.on);
+  document.querySelectorAll('.uiTog[data-o=eco],#ecoBtn').forEach(t=>t.classList.toggle('on',ECO.on));document.querySelectorAll('.uiTog[data-o=anim]').forEach(t=>t.classList.toggle('on',UI.anim));document.querySelectorAll('.uiTog[data-o=lite]').forEach(t=>t.classList.toggle('on',!!UI.lite));}
 
 /* ----- drag to reorder (with smooth FLIP animation) ----- */
 let drag=null;
@@ -4029,7 +4047,19 @@ drawer.addEventListener('click',e=>{const t=e.target.closest('.uiTog');if(!t)ret
   if(t.dataset.h)toggleHidden(t.dataset.h);
   else if(t.dataset.o==='edit')setEdit(!B.classList.contains('uiEdit'));
   else if(t.dataset.o==='anim'){UI.anim=!UI.anim;save();applyAnim();}
-  else if(t.dataset.o==='lite'){UI.lite=!UI.lite;save();applyAnim();}});
+  else if(t.dataset.o==='lite'){UI.lite=!UI.lite;save();applyAnim();}
+  else if(t.dataset.o==='eco')setEco(!ECO.on);});
+function setEco(on){ECO.on=!!on;store.set('dj-eco',on?'1':'0');
+  // буфер звука: в экономе большой (меньше пробуждений звукового потока, нет заиканий). Применяется после перезапуска
+  let cur='m';try{cur=localStorage.getItem('dj-lat')||'m';}catch(e){}
+  if(on&&cur!=='l'){store.set('dj-eco-lat',cur);store.set('dj-lat','l');}
+  if(!on){const p=store.get('dj-eco-lat');if(p&&cur==='l')store.set('dj-lat',p);store.set('dj-eco-lat','');}
+  document.querySelectorAll('#uiLat button').forEach(b=>{let v='m';try{v=localStorage.getItem('dj-lat')||'m';}catch(e){}b.classList.toggle('on',b.dataset.v===v);});
+  applyAnim();decks.forEach(d=>{d.dirty=true;d._ovK=null;});
+  let lat='m';try{lat=localStorage.getItem('dj-lat')||'m';}catch(e){}
+  toast(on?'Экономный режим включён'+(lat!==latSel?'. Большой буфер звука - после перезапуска пульта':''):'Экономный режим выключен'+(lat!==latSel?'. Прежний буфер звука - после перезапуска':''));}
+$('#ecoBtn').onclick=()=>setEco(!ECO.on);
+window.setEco=setEco;
 document.querySelectorAll('#uiMix button').forEach(b=>b.onclick=()=>{UI.mix=b.dataset.v;save();applyMix();});
 const ctlSet=f=>{B.classList.toggle('ctl-fader',f);store.set('dj-ctl',f?'fader':'knob');document.querySelectorAll('#uiCtl button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='fader')===f));};
 document.querySelectorAll('#uiCtl button').forEach(b=>b.onclick=()=>ctlSet(b.dataset.v==='fader'));
@@ -4056,7 +4086,7 @@ document.addEventListener('pointerdown',e=>{if(!UI.anim)return;const b=e.target.
 
 /* ----- beat pulse (play button, disc, deck letter glow in time) ----- */
 function beat(){
-  const on=UI.anim&&!UI.lite&&UI.skin!=='studio';
+  const on=UI.anim&&!UI.lite&&!ECO.on&&UI.skin!=='studio';
   decks.forEach(d=>{let v=0;if(on&&d.playing&&d.bpm){const ph=(((d.audiblePos()-d.offset)/d.period)%1+1)%1;v=Math.pow(1-ph,3);}
     if(Math.abs(v-(d._bp||0))>0.02||(v===0&&d._bp)){d._bp=v;d.el.style.setProperty('--bp',v.toFixed(2));}});
   requestAnimationFrame(beat);}
@@ -6607,6 +6637,574 @@ if(AND){const ob=D.getElementById('outBox');if(ob)ob.style.display='none';}
 
 apply();
 window.MOB={get on(){return M.on;},tab:t=>t?setTab(t):M.tab,apply,sync};
+})();
+</script>
+<style id="rp-style">
+/* ===== Связка с Reaper: экспорт проекта, обратная папка, MIDI clock ===== */
+#rpDrawer{width:min(430px,94vw)}
+#rpBtn{position:relative}
+#rpBtn.live:after{content:"";position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--G);box-shadow:0 0 8px var(--G);animation:rpPulse 1.2s infinite}
+@keyframes rpPulse{50%{opacity:.35}}
+#rpDrawer h4{margin:16px 0 6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);display:flex;align-items:center;gap:6px}
+#rpDrawer h4:first-of-type{margin-top:4px}
+#rpDrawer h4 .ico{width:13px;height:13px}
+.rpRow{display:flex;gap:6px;align-items:center;margin:6px 0;flex-wrap:wrap}
+.rpRow>span{font-size:11px;color:var(--mut);min-width:64px}
+.rpRow select,.rpRow input[type=number]{background:linear-gradient(180deg,#262a35,#1c1f28);color:var(--txt);border:1px solid #323745;border-radius:9px;padding:6px 6px;font:inherit;font-size:12px;font-weight:600}
+.rpRow select{flex:1;min-width:0}
+.rpRow select:focus,.rpRow input:focus{outline:none;border-color:var(--Y)}
+body.sk .rpRow select,body.sk .rpRow input[type=number]{background:var(--sk-inset);border-color:var(--sk-btn-bd)}
+.rpRow button{flex:1}
+.rpRow input[type=number]{width:58px}
+.rpRow input[type=range]{flex:1;min-width:80px}
+.rpChk{display:flex;align-items:center;gap:8px;font-size:12px;margin:5px 0;cursor:pointer}
+.rpChk input{accent-color:var(--G)}
+.rpChk.off{opacity:.45}
+.rpChk small{color:var(--mut)}
+.rpNow{padding:8px 10px;border:1px solid #1d2026;border-radius:9px;background:#0c0d10;font-size:12px;margin:8px 0;line-height:1.45}
+.rpNow b{color:var(--txt)}
+.rpNow .n{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.rpNow .m{color:var(--mut);font-size:11px}
+.rpMsg{font-size:11.5px;color:var(--mut);line-height:1.45;margin:6px 0}
+.rpMsg b{color:var(--txt)}
+.rpMsg.warn{color:var(--Y)}
+.rpMsg.ok{color:var(--G)}
+#rpDrawer .rpHelp{padding:8px 10px;border:1px solid #1d2026;border-radius:9px;background:#0c0d10;margin:8px 0}
+#rpDrawer .rpHelp a{color:var(--G)}
+.rpBig{width:100%;height:40px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px}
+.rpBig.on{border-color:var(--G);box-shadow:0 0 14px color-mix(in srgb,var(--G) 40%,transparent);color:#fff}
+.rpBar{height:6px;border-radius:3px;background:#1a1d23;overflow:hidden;margin:6px 0}
+.rpBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--A),var(--B));transition:width .15s linear}
+.rpBox{border:1px solid #1d2026;border-radius:9px;background:#0c0d10;padding:6px 10px;margin:6px 0}
+.rpPath{font:11px ui-monospace,Consolas,monospace;color:var(--txt);word-break:break-all}
+body.sk .rpNow,body.sk .rpBox{background:var(--sk-panel-solid,#0c0d10);border-color:var(--sk-line,#1d2026)}
+body.mob #rpBtn{display:none}
+/* шапка в одну строку (13.11): кнопки, "Пэды" и "Выход" рядом; подзаголовок сжимается первым */
+header{flex-wrap:nowrap}
+header>*{flex-shrink:0}
+header>.brand{min-width:0;flex-shrink:1}
+header>.brand>div{min-width:0}
+header>.brand h1,header>.brand .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header>button{white-space:nowrap}
+header #outSel{max-width:200px}
+body.lay-float.pads-closed .fab{display:none}
+/* прокрутка в панелях и окнах не уходит на весь пульт, когда панель докручена до конца */
+.uiDrawer,.uiDrawer .db,.fxWin,.gWin,.padsWrap,.dlgWrap,.dlg,.pl .lib,#mobMenu{overscroll-behavior:contain}
+@media (max-width:1100px){header{flex-wrap:wrap}}
+
+</style>
+<script id="rp-script">
+/* ===== Связка с Reaper =====
+   1) "В Reaper": трек, минусовка (без голоса) и дорожки -> WAV + проект .rpp: сетка темпа по долям песни, размер, метки аккордов,
+      аккорды MIDI-дорожкой, метки пульта, тональность в заметках, треки живого вокала (Ui24R: вход = 10 + канал) и два скрипта ReaScript.
+      В программе для Windows всё пишется в Документы\DJ-пульт\Reaper\<трек>\ и Reaper открывается сам; в браузере - один .zip.
+   2) Обратно: скрипт "микс в пульт" рендерит проект в Документы\DJ-пульт\Из Reaper, программа следит за папкой и кладёт файл в плейлист.
+   3) MIDI clock: пульт ведёт, Reaper идёт следом (24 тика на долю, Song Position + Continue на 1/16, Stop на паузе).
+   Пользуется общими deckA/deckB/decks/library/store/ctx/chB/chPos/chName/CHORDS/CH_TYPES/keyName/camelot/addTracks/toast/ic/decode. */
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s),dj=window.djpult,APP=!!(dj&&dj.isApp),RPX=!!(APP&&dj.reaperBegin);
+const LS=(k,d)=>{try{const v=localStorage.getItem('dj-rp-'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}};
+const SS=(k,v)=>{try{localStorage.setItem('dj-rp-'+k,JSON.stringify(v));}catch(e){}};
+const O=Object.assign({deck:'A',orig:true,minus:true,stems:false,chords:true,midi:true,cues:true,grid:'auto',live:true,inFirst:13,inN:4,
+  watch:true,wlist:'A',clk:false,clkOut:'',clkDeck:'auto',clkMs:0},LS('opt',{}));
+const save=()=>SS('opt',O);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const stemsOn=()=>!!(window.STEMS&&STEMS.has);
+const stReady=t=>{try{return !!(t&&stemsOn()&&STEMS.has(t)&&(!STEMS.state||STEMS.state(t)==='ready'));}catch(e){return false;}};
+const stRun=t=>{try{return !!(t&&window.STEMS&&STEMS.state&&STEMS.state(t)==='run');}catch(e){return false;}};
+const deckOf=id=>id==='B'?deckB:deckA;
+
+/* ---------- song beats -> Reaper project ----------
+   The song goes on the timeline at position P so that its first strong beat (bar start) lands on a bar line, at least one bar in.
+   Steady songs get one tempo; songs played live (beats drift on average more than 12 ms from a straight line) get a tempo point on every bar,
+   so Reaper's grid, metronome and bar numbers follow the drummer. Clock sync and MIDI chords use the same map, so they all agree. */
+const lkey=t=>{const ch=t.chords,bt=ch&&ch.bt;return t.bpm+'|'+t.offset+'|'+(bt?bt.length+':'+bt[0]:'')+'|'+(ch&&ch.shift||0)+'|'+O.grid;};
+function layout(t){
+  const ch=t.chords,bpb=ch&&ch.bpb===3?3:4,bpm=t.bpm||120;
+  const bt=ch&&ch.bt&&ch.bt.length>bpb*4?ch.bt:null;
+  let d0=0;if(bt){for(let i=0;i<bpb*2&&i<bt.length;i++)if(chPos(ch,i)===0){d0=i;break;}}
+  let a=t.offset||0,p=60/bpm,dev=0;
+  if(bt){const n=bt.length;let sx=0,sy=0,sxx=0,sxy=0;for(let i=0;i<n;i++){sx+=i;sy+=bt[i];sxx+=i*i;sxy+=i*bt[i];}
+    p=(n*sxy-sx*sy)/(n*sxx-sx*sx);a=(sy-p*sx)/n;
+    // drift = largest average distance from a straight line over 16 beats (single beats jitter by a few ms even in electronic music)
+    const W=Math.min(16,n);let s=0;for(let i=0;i<n;i++){s+=bt[i]-(a+p*i);if(i>=W)s-=bt[i-W]-(a+p*(i-W));if(i>=W-1)dev=Math.max(dev,Math.abs(s/W));}}
+  const live=!!bt&&(O.grid==='live'||(O.grid==='auto'&&dev>0.012));
+  const t0=live?bt[d0]:a+p*d0;
+  let bar0=p*bpb;if(live&&d0+bpb<bt.length)bar0=bt[d0+bpb]-bt[d0];
+  const N=Math.max(1,Math.ceil(t0/bar0-1e-9)),P=N*bar0-t0;
+  // tempo points: {x: project time, bpm, beat: project beat at x}
+  const pts=[{x:0,bpm:60*bpb/bar0,beat:0}];
+  if(live){for(let m=d0;m+bpb<bt.length;m+=bpb){const dur=bt[m+bpb]-bt[m];if(dur<=0.05)continue;const x=P+bt[m],last=pts[pts.length-1];
+      const beat=last.beat+(x-last.x)*last.bpm/60;if(x-last.x<1e-6){last.bpm=60*bpb/dur;continue;}pts.push({x,bpm:60*bpb/dur,beat:Math.round(beat)});}}
+  const beatAt=x=>{let i=pts.length-1;while(i>0&&pts[i].x>x)i--;const q=pts[i];return q.beat+(x-q.x)*q.bpm/60;};
+  const timeAt=b=>{let i=pts.length-1;while(i>0&&pts[i].beat>b)i--;const q=pts[i];return q.x+(b-q.beat)*60/q.bpm;};
+  return {bpb,P,N,d0,live,dev,pts,bpm:live?60/((bt[bt.length-1]-bt[0])/(bt.length-1)):60/p,beatAt,timeAt,key:lkey(t)};
+}
+
+/* ---------- WAV 24 bit and ZIP (no compression, UTF-8 names) ---------- */
+function wav24(chs,sr){const C=chs.length,n=chs[0].length,ba=C*3,u=new Uint8Array(44+n*ba),v=new DataView(u.buffer);
+  const s4=(o,s)=>{for(let i=0;i<4;i++)u[o+i]=s.charCodeAt(i);};
+  s4(0,'RIFF');v.setUint32(4,36+n*ba,true);s4(8,'WAVE');s4(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,C,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr*ba,true);v.setUint16(32,ba,true);v.setUint16(34,24,true);s4(36,'data');v.setUint32(40,n*ba,true);
+  let o=44;for(let i=0;i<n;i++)for(let c=0;c<C;c++){let x=chs[c][i];x=x>1?1:x<-1?-1:x||0;const q=Math.round(x*8388607);u[o]=q&255;u[o+1]=(q>>8)&255;u[o+2]=(q>>16)&255;o+=3;}
+  return u;}
+let CRCT=null;
+function crc32(u){if(!CRCT){CRCT=new Int32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CRCT[n]=c;}}
+  let c=-1;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return (c^-1)>>>0;}
+function zip(files){const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  const d=new Date(),tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  for(const f of files){const nm=enc.encode(f.name),data=typeof f.data==='string'?enc.encode(f.data):f.data,crc=crc32(data),h=new Uint8Array(30+nm.length),v=new DataView(h.buffer);
+    v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x800,true);v.setUint16(8,0,true);v.setUint16(10,tm,true);v.setUint16(12,dt,true);
+    v.setUint32(14,crc,true);v.setUint32(18,data.length,true);v.setUint32(22,data.length,true);v.setUint16(26,nm.length,true);h.set(nm,30);
+    const c=new Uint8Array(46+nm.length),w=new DataView(c.buffer);w.setUint32(0,0x02014b50,true);w.setUint16(4,20,true);w.setUint16(6,20,true);w.setUint16(8,0x800,true);
+    w.setUint16(12,tm,true);w.setUint16(14,dt,true);w.setUint32(16,crc,true);w.setUint32(20,data.length,true);w.setUint32(24,data.length,true);w.setUint16(28,nm.length,true);w.setUint32(42,off,true);c.set(nm,46);
+    parts.push(h,data);cen.push(c);off+=h.length+data.length;}
+  const cs=cen.reduce((s,c)=>s+c.length,0),e=new Uint8Array(22),v=new DataView(e.buffer);
+  v.setUint32(0,0x06054b50,true);v.setUint16(8,files.length,true);v.setUint16(10,files.length,true);v.setUint32(12,cs,true);v.setUint32(16,off,true);
+  return new Blob([...parts,...cen,e],{type:'application/zip'});}
+
+/* ---------- names ---------- */
+const fname=s=>String(s||'трек').replace(/[\\/:*?"<>|\x00-\x1f$]/g,'_').replace(/[. ]+$/,'').trim().slice(0,70)||'трек';
+const q=s=>{s=String(s).replace(/[\r\n]+/g,' ');return s.indexOf('"')<0?'"'+s+'"':s.indexOf("'")<0?"'"+s+"'":'`'+s.replace(/`/g,"'")+'`';};
+const keyFull=k=>k?keyName(k)+' ('+['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][((k.pc%12)+12)%12]+(k.minor?' minor':' major')+', Camelot '+camelot(k)+')':'?';
+const f6=x=>(Math.round(x*1e6)/1e6).toString();
+
+/* ---------- chords: runs of the same chord on beats ---------- */
+function chordRuns(t){const ch=t.chords;if(!ch||!ch.list||!ch.bt)return [];const L=ch.list,out=[];
+  for(let a=0;a<L.length;){let b=a;const nm=chName(ch,a,0);while(b<L.length&&chName(ch,b,0)===nm)b++;
+    if(L[a]>=0&&nm!=='-'){const ci=L[a],pw=!!(ch.pw&&ch.pw[a]);out.push({a,b,name:nm,ci,pw,t0:chT(ch,a),t1:chT(ch,b)});}a=b;}
+  return out;}
+function chordNotes(r){const c=CHORDS[r.ci],root=48+c.pc,iv=r.pw?[0,7,12]:CH_TYPES[c.type].iv;return [36+c.pc,...iv.map(i=>root+i)];}
+function sheet(t){const ch=t.chords;if(!ch||!ch.list)return [];const L=ch.list,bars=[];let cb=[];
+  for(let i=0;i<L.length;i++){if(chPos(ch,i)===0&&cb.length){bars.push(cb);cb=[];}cb.push(i);}if(cb.length)bars.push(cb);
+  const cells=bars.map(b=>{const o=[];let last=null;for(const i of b){const n=chName(ch,i,0);if(n!==last){o.push(n);last=n;}}return o.join(' ');});
+  const lines=[];for(let i=0;i<cells.length;i+=4)lines.push('| '+cells.slice(i,i+4).map(c=>c.padEnd(9)).join('| ')+'|');return lines;}
+
+/* ---------- the .rpp project ---------- */
+function makeRpp(t,L,tr,opt){
+  const k=t.key,dur=t.duration||0,out=[],P=L.P,ts=L.bpb+4*65536;
+  const head=`<REAPER_PROJECT 0.1 "7.0/win64" ${Math.floor(Date.now()/1000)}`;out.push(head);
+  out.push('  RIPPLE 0','  AUTOXFADE 129');
+  out.push(`  TEMPO ${f6(L.pts[0].bpm)} ${L.bpb} 4`);
+  out.push('  CURSOR 0','  ZOOM 20 0 0','  GRID 3199 8 1 8 1 0 0 0');
+  // notes: key, tempo, chord sheet - shown in Reaper under View > Project notes
+  const notes=['DJ-пульт: '+t.name,'Тональность: '+keyFull(k),'Темп: '+L.bpm.toFixed(2)+' BPM, размер '+L.bpb+'/4'+(L.live?' (сетка по живым долям, точка темпа на каждом такте)':''),
+    (opt.gain!=null?'Громкость выровнена: '+(opt.gain>=0?'+':'')+opt.gain.toFixed(1)+' дБ ко всем файлам (около -14 LUFS, пик не выше -1.5 дБ).\n':'')+'Песня начинается с такта '+(L.N+1)+' (первая сильная доля), до него '+L.N+' такт(а) на отсчёт.',''];
+  if(opt.live)notes.push('Живой вокал: треки "Вокал" слушают входы '+opt.inFirst+'-'+(opt.inFirst+opt.inN-1)+' (Ui24R: канал N = вход 10+N). Запись на них выключена, только прослушка.','Автотюн: скрипт "DJ-пульт - автотюн на вокал.lua". Тональность для автотюна: '+(k?keyName(k):'?')+'.','');
+  const sh=sheet(t);if(sh.length)notes.push('Аккорды (один квадрат = такт):',...sh);
+  out.push('  <NOTES 0 2');notes.forEach(s=>String(s).split(/\r?\n/).forEach(x=>out.push('    |'+x)));out.push('  >');
+  // markers: chords at every change, cues of the deck
+  let mi=1;
+  if(opt.cues&&t.cues)t.cues.forEach((c,i)=>{if(c!=null&&isFinite(c))out.push(`  MARKER ${mi++} ${f6(P+c)} ${q('Метка '+(i+1))} 0`);});
+  if(opt.chords)chordRuns(t).forEach(r=>out.push(`  MARKER ${mi++} ${f6(P+r.t0)} ${q(r.name)} 0`));
+  if(L.pts.length>1||L.live){out.push('  <TEMPOENVEX','    ACT 1 -1','    VIS 1 0 1','    LANEHEIGHT 0 0','    ARM 0','    DEFSHAPE 1 -1 -1');
+    L.pts.forEach((p,i)=>out.push(`    PT ${f6(p.x)} ${f6(p.bpm)} 1${i===0?' '+ts:''}`));out.push('  >');}
+  const track=(name,body,o)=>{o=o||{};out.push('  <TRACK',`    NAME ${q(name)}`,`    PEAKCOL ${o.col||16576}`,'    BEAT -1','    AUTOMODE 0',`    VOLPAN ${o.vol||1} 0 -1 -1 1`,`    MUTESOLO ${o.mute?1:0} 0 0`,
+    '    IPHASE 0','    ISBUS 0 0','    NCHAN 2',`    REC ${o.rec||'0 0 1 0 0 0 0 0'}`,'    TRACKHEIGHT 0 0 0 0 0 0','    MAINSEND 1 0');body.forEach(s=>out.push('    '+s));out.push('  >');};
+  const audio=(name,file)=>['<ITEM',`  POSITION ${f6(P)}`,'  SNAPOFFS 0',`  LENGTH ${f6(dur)}`,'  LOOP 0','  ALLTAKES 0','  FADEIN 1 0 0 1 0 0 0','  FADEOUT 1 0 0 1 0 0 0','  MUTE 0 0','  SEL 0',
+    `  NAME ${q(name)}`,'  VOLPAN 1 0 1 -1','  SOFFS 0','  PLAYRATE 1 1 0 -1 0 0.0025','  CHANMODE 0','  <SOURCE WAVE',`    FILE ${q(file)}`,'  >','>'];
+  const col=[0x1000000|0x33aaff,0x1000000|0xff8844,0x1000000|0xffd23f,0x1000000|0x44dd88,0x1000000|0xcc66ff,0x1000000|0xff4466];
+  tr.forEach((x,i)=>track(x.label,audio(x.label,x.file),{mute:x.mute,col:col[i%col.length]}));
+  // chords as MIDI notes on the beats (no instrument on it: put ReaSynth or any VSTi on the track to hear them)
+  if(opt.midi){const runs=chordRuns(t);if(runs.length){const ev=[];
+    for(const r of runs){const b0=L.beatAt(P+r.t0),b1=L.beatAt(P+r.t1),n=chordNotes(r);n.forEach(m=>{ev.push([Math.round(b0*960),1,m]);ev.push([Math.round(b1*960)-8,0,m]);});}
+    ev.sort((x,y)=>x[0]-y[0]||x[1]-y[1]);const lines=['<ITEM','  POSITION 0',`  LENGTH ${f6(P+dur)}`,'  LOOP 0',`  NAME ${q('Аккорды '+t.name)}`,'  <SOURCE MIDI','    HASDATA 1 960 QN'];
+    let last=0;for(const [tk,on,m] of ev){const d=Math.max(0,tk-last);last+=d;lines.push(`    E ${d} ${on?'90':'80'} ${m.toString(16).padStart(2,'0')} ${on?'50':'00'}`);}
+    lines.push('    E 0 b0 7b 00','  >','>');track('Аккорды (MIDI)',lines,{col:0x1000000|0x8899aa});}}
+  // live vocal tracks: input (Ui24R channel N = ASIO input 10+N), monitoring on, record mode "none" = only listen, nothing is recorded
+  if(opt.live)for(let i=0;i<opt.inN;i++){const inp=opt.inFirst+i;track('Вокал '+(i+1)+' (вход '+inp+')'+(k?' - '+keyName(k):''),[],{rec:`1 ${inp-1} 1 2 0 0 0 0`,col:0x1000000|0xff4466});}
+  out.push('>');return out.join('\r\n')+'\r\n';}
+
+/* ---------- ReaScripts (Lua) ---------- */
+function luaStr(s){return '"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"';}
+function luaBack(inbox){return `-- DJ-пульт: отправить микс в пульт
+-- Рендерит весь проект (мастер, WAV) в папку, за которой следит программа DJ-пульт,
+-- и трек сам появляется в плейлисте пульта. Настройки рендера проекта после этого возвращаются как были.
+local INBOX = ${inbox?luaStr(inbox):'nil'}
+if not INBOX then
+  local home = os.getenv("USERPROFILE") or ""
+  INBOX = home .. "\\\\Documents\\\\DJ-пульт\\\\Из Reaper"
+end
+local P = 0
+local function gs(k) local _, v = reaper.GetSetProjectInfo_String(P, k, "", false) return v end
+local function ss(k, v) reaper.GetSetProjectInfo_String(P, k, v, true) end
+local function gn(k) return reaper.GetSetProjectInfo(P, k, 0, false) end
+local function sn(k, v) reaper.GetSetProjectInfo(P, k, v, true) end
+local old = { file = gs("RENDER_FILE"), pat = gs("RENDER_PATTERN"), fmt = gs("RENDER_FORMAT"),
+  set = gn("RENDER_SETTINGS"), bnd = gn("RENDER_BOUNDSFLAG"), ch = gn("RENDER_CHANNELS"), add = gn("RENDER_ADDTOPROJ") }
+reaper.RecursiveCreateDirectory(INBOX, 0)
+local name = reaper.GetProjectName(P, "") or ""
+name = name:gsub("%.[Rr][Pp][Pp]$", ""):gsub("[\\\\/:%*%?\\"<>|%$]", "_")
+if name == "" then name = "Микс из Reaper" end
+ss("RENDER_FILE", INBOX)
+ss("RENDER_PATTERN", name .. " - Reaper " .. os.date("%H-%M-%S"))
+ss("RENDER_FORMAT", "evaw")      -- WAV
+sn("RENDER_SETTINGS", 0)         -- мастер
+sn("RENDER_BOUNDSFLAG", 1)       -- весь проект
+sn("RENDER_CHANNELS", 2)
+sn("RENDER_ADDTOPROJ", 0)
+reaper.Main_OnCommand(42230, 0)  -- File: Render project, using the most recent render settings, auto-close render dialog
+ss("RENDER_FILE", old.file); ss("RENDER_PATTERN", old.pat); if old.fmt ~= "" then ss("RENDER_FORMAT", old.fmt) end
+sn("RENDER_SETTINGS", old.set); sn("RENDER_BOUNDSFLAG", old.bnd); sn("RENDER_CHANNELS", old.ch); sn("RENDER_ADDTOPROJ", old.add)
+`;}
+// shared autotune code: DJPULT_TUNE(proj, auto) puts autotune on every "Вокал..." track of a DJ-pult project (once)
+function luaTuneCore(){return `-- DJ-пульт: автотюн на треки "Вокал" (общая часть)
+-- Graillon 3, если он установлен, иначе GSnap, иначе встроенный ReaTune. Если автотюн на треке уже стоит, второй не ставится.
+-- Если раньше стоял ReaTune, а теперь появился Graillon или GSnap, ReaTune меняется на него.
+-- В Graillon сразу выставляется тональность песни (разрешены только ноты её лада).
+local CANDIDATES = { "Graillon 3", "Graillon", "GSnap", "ReaTune" }
+local BETTER = { "Graillon 3", "Graillon", "GSnap" }
+local NN = { C = 0, ["C#"] = 1, D = 2, ["D#"] = 3, E = 4, F = 5, ["F#"] = 6, G = 7, ["G#"] = 8, A = 9, ["A#"] = 10, B = 11 }
+local function fxname(tr, i) local _, n = reaper.TrackFX_GetFXName(tr, i, "") return (n or ""):lower() end
+local function has_tune(tr)
+  for i = 0, reaper.TrackFX_GetCount(tr) - 1 do
+    local n = fxname(tr, i)
+    if n:find("graillon") or n:find("gsnap") or n:find("reatune") or n:find("auto%-tune") or n:find("autotune") or n:find("tune real") or n:find("melodyne") then return i end
+  end
+  return -1
+end
+function DJPULT_KEY(proj)
+  local notes = reaper.GetSetProjectNotes(proj, false, "") or ""
+  return notes:match("Тональность для автотюна: ([^%.\\r\\n]+)") or "?"
+end
+-- тональность в Graillon: "Allow <нота>" = да только для нот лада (минор натуральный, мажор)
+function DJPULT_SETKEY(tr, fx, key)
+  if not fxname(tr, fx):find("graillon") then return false end
+  local n, m = (key or ""):match("^%s*([A-G]#?)(m?)")
+  if not n or not NN[n] then return false end
+  local steps = (m == "m") and { 0, 2, 3, 5, 7, 8, 10 } or { 0, 2, 4, 5, 7, 9, 11 }
+  local allow = {}
+  for _, st in ipairs(steps) do allow[(NN[n] + st) % 12] = true end
+  local set = 0
+  for p = 0, reaper.TrackFX_GetNumParams(tr, fx) - 1 do
+    local _, pn = reaper.TrackFX_GetParamName(tr, fx, p, "")
+    local note = pn and pn:match("^Allow (%S+)$")
+    if note and NN[note] then reaper.TrackFX_SetParamNormalized(tr, fx, p, allow[NN[note]] and 1 or 0) set = set + 1 end
+  end
+  return set == 12
+end
+-- auto: при открытии проекта; upgrade: только заменить ReaTune на лучший плагин, ничего не добавлять
+function DJPULT_TUNE(proj, auto, upgrade)
+  local used, count, first, keyset = nil, 0, nil, 0
+  local key = DJPULT_KEY(proj)
+  reaper.Undo_BeginBlock2(proj)
+  for t = 0, reaper.CountTracks(proj) - 1 do
+    local tr = reaper.GetTrack(proj, t)
+    local _, name = reaper.GetTrackName(tr)
+    if name:find("^Вокал") then
+      local idx, added = has_tune(tr), false
+      if idx >= 0 and fxname(tr, idx):find("reatune") then
+        for _, c in ipairs(BETTER) do
+          local ni = reaper.TrackFX_AddByName(tr, c, false, -1)
+          if ni >= 0 then
+            reaper.TrackFX_CopyToTrack(tr, ni, tr, idx, true)  -- на место ReaTune
+            reaper.TrackFX_Delete(tr, idx + 1)
+            used, added = c, true
+            break
+          end
+        end
+      elseif idx < 0 and not upgrade then
+        for _, c in ipairs(CANDIDATES) do
+          idx = reaper.TrackFX_AddByName(tr, c, false, -1)
+          if idx >= 0 then used, added = c, true break end
+        end
+      end
+      if idx >= 0 then
+        count = count + 1
+        if (added or not auto) and key ~= "?" and DJPULT_SETKEY(tr, idx, key) then keyset = keyset + 1 end
+        if not first then first = { tr, idx } end
+      end
+    end
+  end
+  reaper.Undo_EndBlock2(proj, "DJ-пульт: автотюн на вокал", -1)
+  local best = false
+  if first then best = not fxname(first[1], first[2]):find("reatune") end
+  reaper.SetProjExtState(proj, "DJPULT", "tuned", best and "2" or "1")
+  if first and (used or not auto) then reaper.TrackFX_Show(first[1], first[2], 3) end
+  return count, used, keyset, key
+end
+`;}
+// one-off action (also in the project folder): works without the automatic setup
+function luaTune(key){return luaTuneCore()+`
+-- запуск вручную: Actions > Show action list > "DJ-пульт - автотюн на вокал"
+local count, used, keyset, KEY = DJPULT_TUNE(0, false, false)
+if KEY == "?" then KEY = ${luaStr(key||'?')} end
+if count == 0 then
+  reaper.ShowMessageBox("Не нашёл треков \\"Вокал...\\" или ни один автотюн не установлен.\\nНужен Graillon 3, GSnap или встроенный ReaTune.", "DJ-пульт", 0)
+else
+  reaper.ShowMessageBox("Автотюн стоит на " .. count .. " вокальных треках" .. (used and (" (" .. used .. ")") or "") .. ".\\n" ..
+    (keyset > 0 and ("Тональность " .. KEY .. " выставлена в Graillon сам.") or ("Тональность песни: " .. KEY .. ". Выставьте её в плагине.")) ..
+    "\\n\\nЧем меньше Smooth (Graillon) или Retune Speed, тем заметнее эффект.", "DJ-пульт", 0)
+end
+`;}
+// runs with every Reaper start (from __startup.lua): registers the actions and sets up every project from the pult as soon as it opens
+function luaStartup(){return `-- DJ-пульт: автонастройка Reaper (запускается сам при старте Reaper из __startup.lua)
+-- 1) действия "DJ-пульт - микс в пульт" и "DJ-пульт - автотюн на вокал" появляются в списке действий;
+-- 2) проект из пульта при открытии сразу получает автотюн на треках "Вокал" (один раз, дальше настройки ваши).
+local dir = reaper.GetResourcePath() .. "/Scripts/DJ-pult/"
+reaper.AddRemoveReaScript(true, 0, dir .. "DJ-пульт - микс в пульт.lua", false)
+reaper.AddRemoveReaScript(true, 0, dir .. "DJ-пульт - автотюн на вокал.lua", true)
+dofile(dir .. "tune-core.lua")
+local last = nil
+local function loop()
+  local proj, fn = reaper.EnumProjects(-1)
+  if proj then
+    local id = tostring(proj) .. "|" .. (fn or "")
+    if id ~= last then
+      last = id
+      local notes = reaper.GetSetProjectNotes(proj, false, "") or ""
+      if notes:find("^DJ%-пульт:") then
+        local _, done = reaper.GetProjExtState(proj, "DJPULT", "tuned")
+        if done ~= "1" and done ~= "2" then DJPULT_TUNE(proj, true, false)
+        elseif done == "1" then DJPULT_TUNE(proj, true, true) end  -- стоял ReaTune: заменить, если появился Graillon
+      end
+    end
+  end
+  reaper.defer(loop)
+end
+reaper.defer(loop)
+`;}
+function readme(t,L,k,list,opt){return ['DJ-пульт -> Reaper: '+t.name,'',
+  'Тональность: '+keyFull(k),'Темп: '+L.bpm.toFixed(2)+' BPM, '+L.bpb+'/4'+(L.live?', сетка по живым долям':''),'',
+  'Нет Reaper? Скачать: https://www.reaper.fm/download.php (60 дней бесплатно, без ограничений).','Минусовка и дорожки - обычные WAV, их можно открыть и без Reaper.','',
+  'Как открыть:','1. Распакуйте архив в любую папку (все файлы рядом).','2. Откройте "'+fname(t.name)+'.rpp" двойным щелчком (или в Reaper: File > Open project).','',
+  'Треки в проекте:',...list.map(x=>'- '+x.label+(x.mute?' (выключен, включите кнопкой M)':'')),
+  ...(opt.midi?['- Аккорды (MIDI): аккорды нотами по долям. Чтобы услышать - поставьте на трек ReaSynth или любой синтезатор.']:[]),
+  ...(opt.live?['- Вокал 1-'+opt.inN+': входы '+opt.inFirst+'-'+(opt.inFirst+opt.inN-1)+', прослушка включена, запись выключена.']:[]),'',
+  'Скрипты (Actions > Show action list > New action > Load ReaScript):',
+  '- "DJ-пульт - автотюн на вокал.lua" - ставит автотюн на треки "Вокал".',
+  '- "DJ-пульт - микс в пульт.lua" - рендерит проект в Документы\\DJ-пульт\\Из Reaper; программа DJ-пульт сама кладёт его в плейлист.',''].join('\r\n');}
+
+/* ---------- export ---------- */
+const X={busy:false,msg:'',cls:'',p:0};
+function setMsg(m,c,p){X.msg=m;X.cls=c||'';if(p!=null)X.p=p;render();}
+async function getMix(t,d){if(d&&d.track===t&&d.orig)return d.orig;return await decode(await t.blob.arrayBuffer());}
+const chans=b=>{const C=b.numberOfChannels;return [b.getChannelData(0),b.getChannelData(C>1?1:0)];};
+async function exportTrack(){
+  if(X.busy)return;const d=deckOf(O.deck),t=d.track;
+  if(!t||!t.blob){setMsg('На деке '+O.deck+' нет трека. Загрузите трек на деку.','warn');return;}
+  const wantSt=O.minus||O.stems;
+  if(!O.orig&&!wantSt){setMsg('Отметьте, что взять: весь трек, минусовку или дорожки.','warn');return;}
+  X.busy=true;render();
+  try{
+    if(!t.bpm||t.chords===undefined){setMsg('Жду анализ трека (темп, доли, аккорды)...','',0.02);if(d.loadingP)await d.loadingP;
+      for(let i=0;i<600&&(!t.bpm||t.chords===undefined);i++)await new Promise(r=>setTimeout(r,100));}
+    if(wantSt&&!stReady(t)){
+      if(!stemsOn())throw new Error('разложение на дорожки недоступно в этой версии');
+      setMsg('Раскладываю трек на голос, бас, барабаны и музыку...','',0.05);
+      const iv=setInterval(()=>{const p=STEMS.progress?STEMS.progress(t):0;setMsg('Раскладываю трек на дорожки: '+Math.round(p*100)+'%','',0.05+p*0.55);},400);
+      let ok=false;try{ok=await STEMS.run(t);}finally{clearInterval(iv);}
+      if(!ok)throw new Error('не получилось разложить трек на дорожки');}
+    const L=layout(t),k=t.key,nm=fname(t.name),files=[],list=[];
+    const raw=[],add=(label,file,chs,sr,mute)=>{raw.push({file,chs,sr});list.push({label,file,mute});};
+    setMsg('Готовлю звук...','',0.62);
+    if(wantSt){const g={};for(const n of ['vocals','drums','bass','other'])g[n]=await STEMS.get(t,n);
+      if(!g.vocals||!g.other)throw new Error('дорожки не читаются - разложите трек заново');const sr=g.vocals.sr;
+      if(O.minus){const n=g.drums.ch[0].length,m=[0,1].map(c=>{const o=new Float32Array(n),a=g.drums.ch[c],b=g.bass.ch[c],e=g.other.ch[c];for(let i=0;i<n;i++)o[i]=a[i]+b[i]+e[i];return o;});
+        add('Минусовка (без голоса)',nm+' - минусовка.wav',m,sr,false);}
+      if(O.stems)[['vocals','Голос'],['drums','Барабаны'],['bass','Бас'],['other','Музыка']].forEach(([n,l])=>add(l,nm+' - '+l.toLowerCase()+'.wav',g[n].ch,sr,O.minus));
+      setMsg('Готовлю звук...','',0.75);}
+    if(O.orig){const b=await getMix(t,d);add('Оригинал',nm+' - оригинал.wav',chans(b),b.sampleRate,wantSt);}
+    // one gain for all files (they stay in balance with each other): the whole song (with voice) to about -14 LUFS, and no file
+    // louder than -1.5 dB peak, so nothing clips and there is room for the live vocal on top
+    {let pk=0;for(const r of raw)for(const c of r.chs)for(let i=0;i<c.length;i++){const a=c[i]<0?-c[i]:c[i];if(a>pk)pk=a;}
+      let lu=null;try{const mb=await getMix(t,d),v=lufsOf(mb);lu=typeof v==='number'?v:v&&v.i;}catch(e){}
+      const gPk=pk>0?Math.pow(10,-1.5/20)/pk:1,gLu=lu!=null&&isFinite(lu)?Math.pow(10,(-14-lu)/20):1,gain=Math.min(gPk,gLu);
+      X.gain=20*Math.log10(gain);X.lufs=lu;X.peak=20*Math.log10(pk||1e-9);
+      setMsg('Выравниваю громкость ('+(X.gain>=0?'+':'')+X.gain.toFixed(1)+' дБ)...','',0.78);
+      for(const r of raw){const chs=r.chs.map(c=>{const o=new Float32Array(c.length);for(let i=0;i<c.length;i++)o[i]=c[i]*gain;return o;});files.push({name:r.file,data:wav24(chs,r.sr)});r.chs=null;}}
+    if(!t.duration){const b=await getMix(t,d);t.duration=b.duration;}
+    const opt={gain:X.gain,chords:O.chords,midi:O.midi,cues:O.cues,live:O.live,inFirst:Math.max(1,Math.min(64,+O.inFirst||13)),inN:Math.max(1,Math.min(8,+O.inN||4))};
+    const rpp=makeRpp(t,L,list,opt),keyTxt=k?keyName(k)+' ('+(k.minor?'минор':'мажор')+')':'?';
+    setMsg('Сохраняю...','',0.8);
+    if(RPX){
+      const r=await dj.reaperBegin(t.name),dir=r.dir;let i=0;
+      for(const f of files){await dj.reaperWrite({dir,name:f.name,data:f.data});setMsg('Сохраняю: '+f.name,'',0.8+0.15*(++i)/files.length);f.data=null;}
+      const rp=await dj.reaperWrite({dir,name:nm+'.rpp',data:new TextEncoder().encode(rpp)});
+      await dj.reaperWrite({dir,name:'DJ-пульт - автотюн на вокал.lua',data:new TextEncoder().encode(luaTune(keyTxt))});
+      await dj.reaperWrite({dir,name:'DJ-пульт - микс в пульт.lua',data:new TextEncoder().encode(luaBack(r.inbox))});
+      await dj.reaperWrite({dir,name:'Прочитай.txt',data:new TextEncoder().encode(readme(t,L,k,list,opt))});
+      if(r.root){await dj.reaperWrite({dir:r.root,name:'DJ-пульт - микс в пульт.lua',data:new TextEncoder().encode(luaBack(r.inbox))});}
+      const ins=await rpInstall(r.inbox);
+      const o=await dj.reaperOpen({rpp:rp});X.last=dir;
+      setMsg(o&&o.ok?'Открываю в Reaper: '+t.name+'.'+(opt.live&&ins&&ins.ok?' Автотюн встанет на вокал сам'+(ins.fresh?' (если Reaper уже был открыт, перезапустите его один раз)':'')+'.':'')+' Папка проекта: '+dir:'Проект сохранён, но Reaper не открылся сам ('+((o&&o.err)||'нет связи с .rpp')+'). Откройте файл .rpp из папки: '+dir,o&&o.ok?'ok':'warn',1);
+    }else{
+      const all=[...files,{name:nm+'.rpp',data:rpp},{name:'DJ-пульт - автотюн на вокал.lua',data:luaTune(keyTxt)},{name:'DJ-пульт - микс в пульт.lua',data:luaBack(null)},{name:'Прочитай.txt',data:readme(t,L,k,list,opt)}];
+      setMsg('Собираю архив...','',0.9);await new Promise(r=>setTimeout(r,30));
+      const blob=zip(all),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=nm+' - Reaper.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      setMsg('Архив скачан ('+Math.round(blob.size/1048576)+' МБ). Распакуйте его и откройте "'+nm+'.rpp" двойным щелчком.'+(APP?' Обновите программу до 1.0.18 - тогда Reaper откроется сам.':''),'ok',1);}
+  }catch(e){console.warn('reaper export',e);setMsg('Не получилось: '+(e&&e.message||e),'warn',0);}
+  X.busy=false;render();}
+
+/* ---------- automatic setup of Reaper (program only): scripts in Reaper\Scripts\DJ-pult + one line in __startup.lua ---------- */
+const RI={st:null};
+async function rpInstall(inbox){if(!(RPX&&dj.reaperInstall))return null;
+  try{RI.st=await dj.reaperInstall({files:{'startup.lua':luaStartup(),'tune-core.lua':luaTuneCore(),'DJ-пульт - микс в пульт.lua':luaBack(inbox||W.inbox||null),'DJ-пульт - автотюн на вокал.lua':luaTune('?')}});}
+  catch(e){RI.st={ok:false,err:String(e&&e.message||e)};}render();return RI.st;}
+
+/* ---------- back from Reaper: watched folder (program only) ---------- */
+const W={inbox:'',n:0,last:''};
+async function watchApply(){if(!RPX)return;try{const r=await dj.reaperWatch(!!O.watch);if(r&&r.inbox)W.inbox=r.inbox;}catch(e){}render();updBtn();}
+if(RPX&&dj.onReaperFile)dj.onReaperFile(async f=>{if(!O.watch)return;
+  try{const data=await dj.reaperRead(f.path),ext=(f.name.split('.').pop()||'').toLowerCase(),type={wav:'audio/wav',mp3:'audio/mpeg',flac:'audio/flac',ogg:'audio/ogg',m4a:'audio/mp4'}[ext]||'audio/wav';
+    const file=new File([data],f.name,{type});await dj.reaperDone(f.path);W.n++;W.last=f.name;
+    toast('Из Reaper: '+f.name.replace(/\.[^.]+$/,'')+' - в плейлист '+O.wlist);await addTracks([file],O.wlist);render();}
+  catch(e){console.warn('reaper in',e);}});
+
+/* ---------- MIDI clock: the deck leads, Reaper follows ---------- */
+const CK={acc:null,out:null,run:false,tick:0,d:null,L:null,Lk:'',wrap:0,prevRaw:0,timer:0,err:''};
+async function ckAccess(){if(CK.acc)return CK.acc;if(!navigator.requestMIDIAccess){CK.err='MIDI в этом браузере нет';return null;}
+  try{CK.acc=await navigator.requestMIDIAccess();CK.acc.onstatechange=()=>{ckPick();render();};}catch(e){CK.err='Нет доступа к MIDI';}return CK.acc;}
+function ckOuts(){return CK.acc?[...CK.acc.outputs.values()]:[];}
+function ckPick(){const outs=ckOuts();CK.out=outs.find(o=>o.id===O.clkOut)||outs.find(o=>o.name===O.clkOutName)||null;}
+const send=(b,at)=>{try{CK.out&&CK.out.send(b,at);}catch(e){}};
+function ckDeck(){if(O.clkDeck==='A')return deckA;if(O.clkDeck==='B')return deckB;if(CK.d&&CK.d.playing)return CK.d;return decks.find(d=>d.playing)||CK.d||deckA;}
+function ckStop(){if(CK.run){try{CK.out&&CK.out.clear&&CK.out.clear();}catch(e){}send([0xFC]);CK.run=false;}}
+function ckLoop(){
+  if(!O.clk||!CK.out){ckStop();return;}
+  const d=ckDeck();if(d!==CK.d){ckStop();CK.d=d;}
+  const t=d&&d.track;if(!t||!d.buffer||!d.playing){ckStop();return;}
+  const r=d.curRate();if(r<0.02)return;   // vinyl brake at the very end: hold the clock
+  if(!CK.L||CK.Lt!==t||CK.Lk!==lkey(t)){CK.L=layout(t);CK.Lt=t;CK.Lk=CK.L.key;ckStop();}
+  const L=CK.L,now=performance.now(),ts=ctx.getOutputTimestamp?ctx.getOutputTimestamp():null;
+  const lat=(ctx.outputLatency||0)+(ctx.baseLatency||0);
+  // context time -> performance.now() of the moment it is heard; the browser's timestamp moves in audio-block steps, so it is smoothed
+  const o=(ts&&ts.performanceTime>0)?ts.performanceTime-ts.contextTime*1000:now-(ctx.currentTime-lat)*1000;
+  CK.off=CK.off==null||Math.abs(o-CK.off)>25?o:CK.off+0.04*(o-CK.off);
+  const sh=CK.off+(+O.clkMs||0),perf=ct=>ct*1000+sh,ctAt=p=>(p-sh)/1000;
+  // song time without loop wraps (a deck loop keeps the clock running forward instead of jumping Reaper back every bar)
+  const lp=d.roll||d.loop,raw=ct=>d.pos+(ct-d.lastT)*r;
+  const sNow=raw(ctAt(now));
+  if(lp&&CK.run&&sNow<CK.prevRaw-0.5*(lp.end-lp.start))CK.wrap+=lp.end-lp.start;
+  if(!lp)CK.wrap=0;CK.prevRaw=sNow;
+  const sU=s=>s+CK.wrap,beatOf=s=>L.beatAt(L.P+s),songOf=b=>L.timeAt(b)-L.P;
+  const tickNow=beatOf(sU(sNow))*24;
+  if(CK.run&&Math.abs(tickNow-CK.tick)>18){ckStop();CK.wrap=0;}   // seek, cue, track change: start again at the right place
+  if(!CK.run){
+    CK.wrap=0;let q16=Math.ceil(beatOf(sNow)*4+0.02),p0;
+    for(;;){const ct=d.lastT+(songOf(q16/4)-d.pos)/r;p0=perf(ct);if(p0>now+40)break;q16++;}
+    if(q16<0)return;
+    const spp=Math.min(16383,q16);send([0xF2,spp&127,(spp>>7)&127],Math.max(now,p0-20));send([0xFB],p0-1);send([0xF8],p0);
+    CK.tick=q16*6;CK.run=true;CK.prevRaw=sNow;}
+  for(let n=0;n<200;n++){const nx=CK.tick+1,s=songOf(nx/24)-CK.wrap,ct=d.lastT+(s-d.pos)/r,p=perf(ct);if(p>now+90)break;send([0xF8],Math.max(now,p));CK.tick=nx;}
+}
+async function ckApply(){clearInterval(CK.timer);CK.timer=0;
+  if(O.clk){await ckAccess();ckPick();CK.timer=setInterval(ckLoop,20);}else ckStop();render();updBtn();}
+document.addEventListener('visibilitychange',()=>{if(O.clk&&!CK.timer)ckApply();});
+
+/* ---------- wheel / touchpad inside panels and windows never scrolls the pult behind them ----------
+   the panel scrolls itself while it can; at its end (or over a part that does not scroll) the wheel stops there */
+document.addEventListener('wheel',e=>{if(e.ctrlKey||e.defaultPrevented)return;const t=e.target,ov=t&&t.closest&&t.closest('.uiDrawer.open,.fxWin,.gWin,.dlgWrap,body.lay-float .padsWrap,#mobMenu');if(!ov)return;
+  const dy=e.deltaY,dx=e.deltaX;
+  for(let el=t;el&&el.nodeType===1;el=el.parentElement){const cs=getComputedStyle(el);
+    if(Math.abs(dy)>=Math.abs(dx)){if(/(auto|scroll)/.test(cs.overflowY)&&el.scrollHeight>el.clientHeight+1&&((dy<0&&el.scrollTop>0)||(dy>0&&el.scrollTop+el.clientHeight<el.scrollHeight-1)))return;}
+    else if(/(auto|scroll)/.test(cs.overflowX)&&el.scrollWidth>el.clientWidth+1&&((dx<0&&el.scrollLeft>0)||(dx>0&&el.scrollLeft+el.clientWidth<el.scrollWidth-1)))return;
+    if(el===ov)break;}
+  e.preventDefault();},{passive:false});
+
+/* ---------- panel ---------- */
+const hdr=$('header'),uiB=$('#uiBtn');
+const btn=document.createElement('button');btn.id='rpBtn';btn.className='sm';btn.title='Связка с Reaper: открыть трек и дорожки в Reaper, микс обратно в пульт, MIDI clock';
+btn.innerHTML='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0"/></svg>Reaper';
+{const nf=$('#nfBtn');if(nf&&nf.parentNode===hdr)hdr.insertBefore(btn,nf);else if(uiB&&uiB.parentNode===hdr)hdr.insertBefore(btn,uiB);else hdr.appendChild(btn);}
+if(window.DJA)btn.style.display='none';
+const dr=document.createElement('aside');dr.className='uiDrawer';dr.id='rpDrawer';
+dr.innerHTML=`<div class="dh"><h3>Reaper</h3><button class="sm icon" id="rpClose" title="Закрыть">${ic('close')}</button></div>
+<div class="db">
+<h4>${ic('arrowR')}Трек в Reaper</h4>
+<div class="rpRow"><span>Трек с</span><div class="seg" id="rpDeck" style="flex:1"><button data-v="A">Деки A</button><button data-v="B">Деки B</button></div></div>
+<div class="rpNow" id="rpNow"></div>
+<div class="rpMsg rpHelp" id="rpHelp"></div>
+<label class="rpChk" id="rpMinusL"><input type="checkbox" id="rpMinus"> Минусовка (трек без голоса)</label>
+<label class="rpChk" id="rpStemsL"><input type="checkbox" id="rpStems"> Дорожки: голос, барабаны, бас, музыка</label>
+<label class="rpChk"><input type="checkbox" id="rpOrig"> Весь трек (оригинал)</label>
+<label class="rpChk"><input type="checkbox" id="rpChords"> Метки аккордов на шкале</label>
+<label class="rpChk"><input type="checkbox" id="rpMidi"> Аккорды нотами (MIDI-трек)</label>
+<label class="rpChk"><input type="checkbox" id="rpCues"> Метки 1-4 с деки</label>
+<div class="rpRow"><span>Сетка темпа</span><select id="rpGrid"><option value="auto">Сама: ровная или по живым долям</option><option value="live">По живым долям (каждый такт)</option><option value="even">Ровная, один темп</option></select></div>
+<label class="rpChk"><input type="checkbox" id="rpLive"> Треки для живого вокала</label>
+<div class="rpRow" id="rpLiveRow"><span>Входы</span><span style="min-width:0">с</span><input type="number" id="rpIn1" min="1" max="64"><span style="min-width:0">штук</span><input type="number" id="rpInN" min="1" max="8"><span style="min-width:0;flex:1" id="rpInTxt"></span></div>
+<button class="rpBig" id="rpGo"></button>
+<div class="rpBar"><i id="rpBarI"></i></div>
+<div class="rpMsg" id="rpMsg"></div>
+<div class="rpMsg" id="rpTune"></div>
+<div class="rpRow" id="rpFolderRow"><button id="rpFolder">Открыть папку проектов</button></div>
+
+<h4>${ic('arrowL')}Из Reaper в пульт</h4>
+<div id="rpBack"></div>
+
+<h4>${ic('fx')}MIDI clock: Reaper играет с декой</h4>
+<label class="rpChk"><input type="checkbox" id="rpClk"> Посылать MIDI clock (темп, старт, стоп, место в песне)</label>
+<div class="rpRow"><span>Выход MIDI</span><select id="rpClkOut"></select></div>
+<div class="rpRow"><span>Ведёт</span><div class="seg" id="rpClkDeck" style="flex:1"><button data-v="auto">Играющая</button><button data-v="A">Дека A</button><button data-v="B">Дека B</button></div></div>
+<div class="rpRow"><span>Сдвиг <b id="rpMsV">0</b> мс</span><input type="range" id="rpMs" min="-150" max="150" step="1"></div>
+<div class="rpMsg" id="rpClkMsg"></div>
+<div class="rpMsg">Нужен виртуальный MIDI-кабель (например бесплатный loopMIDI): пульт посылает в него, Reaper слушает. В Reaper включите этот вход и синхронизацию по MIDI clock (правый щелчок по кнопке Play). Место в песне совпадает с проектом, который сделала кнопка выше.</div>
+</div>`;
+document.body.appendChild(dr);
+let open=false;
+function toggle(o){open=o==null?!open:o;
+  if(open){for(const id of ['nfDrawer','uiDrawer','skinDrawer']){const e=document.getElementById(id);if(e&&e.classList.contains('open')){const c=e.querySelector('.dh button');if(c)c.click();else e.classList.remove('open');}}}
+  dr.classList.toggle('open',open);btn.classList.toggle('on',open);if(open){if(O.clk||ckOuts().length)ckAccess().then(()=>{ckPick();render();});render();}}
+btn.onclick=()=>toggle();$('#rpClose').onclick=()=>toggle(false);
+['#nfBtn','#uiBtn','#skinBtn'].forEach(s=>{const b=$(s);b&&b.addEventListener('click',()=>{if(open)toggle(false);});});
+function updBtn(){btn.classList.toggle('live',!!(O.clk&&CK.out)||!!(RPX&&O.watch&&W.n));}
+const seg=(sel,v)=>dr.querySelectorAll(sel+' button').forEach(b=>b.classList.toggle('on',b.dataset.v===String(v)));
+dr.querySelectorAll('#rpDeck button').forEach(b=>b.onclick=()=>{O.deck=b.dataset.v;save();render();});
+dr.querySelectorAll('#rpClkDeck button').forEach(b=>b.onclick=()=>{O.clkDeck=b.dataset.v;save();ckStop();render();});
+const bindChk=(id,k,fn)=>{$(id).onchange=e=>{O[k]=e.target.checked;save();if(fn)fn();render();};};
+bindChk('#rpMinus','minus');bindChk('#rpStems','stems');bindChk('#rpOrig','orig');bindChk('#rpChords','chords');bindChk('#rpMidi','midi');bindChk('#rpCues','cues');bindChk('#rpLive','live');
+bindChk('#rpClk','clk',ckApply);
+$('#rpGrid').onchange=e=>{O.grid=e.target.value;save();render();};
+$('#rpIn1').onchange=e=>{O.inFirst=Math.max(1,Math.min(64,Math.round(+e.target.value)||13));save();render();};
+$('#rpInN').onchange=e=>{O.inN=Math.max(1,Math.min(8,Math.round(+e.target.value)||4));save();render();};
+$('#rpClkOut').onchange=e=>{O.clkOut=e.target.value;const o=ckOuts().find(x=>x.id===O.clkOut);O.clkOutName=o?o.name:'';save();ckStop();ckPick();render();updBtn();};
+$('#rpMs').oninput=e=>{O.clkMs=+e.target.value;$('#rpMsV').textContent=O.clkMs;save();};
+$('#rpMs').ondblclick=()=>{O.clkMs=0;save();render();};
+$('#rpGo').onclick=exportTrack;
+$('#rpFolder').onclick=()=>{if(RPX&&dj.reaperShow)dj.reaperShow(X.last||'');};
+dr.addEventListener('click',e=>{const b=e.target.closest('[data-rp]');if(!b)return;const a=b.dataset.rp;
+  if(a==='watch'){O.watch=!O.watch;save();watchApply();}
+  else if(a==='inbox'&&dj.reaperShow)dj.reaperShow('inbox');
+  else if(a==='list'){O.wlist=b.dataset.v;save();render();}});
+
+function render(){if(!open)return;
+  seg('#rpDeck',O.deck);seg('#rpClkDeck',O.clkDeck);
+  const d=deckOf(O.deck),t=d.track,rd=stReady(t),run=stRun(t);
+  const L=t&&t.bpm?layout(t):null,k=t&&t.key;
+  $('#rpNow').innerHTML=t?`<span class="n">${esc(t.name)}</span><span class="m">${t.bpm?'<b>'+(L?L.bpm:t.bpm).toFixed(1)+'</b> BPM · '+(L?L.bpb:4)+'/4':'темп ещё считается'}${k?' · тональность <b>'+esc(keyName(k))+'</b> ('+camelot(k)+')':''}${L&&L.live?' · живой темп: сетка по каждому такту':''}<br>${
+    rd?'Дорожки готовы.':run?'Дорожки раскладываются...':(O.minus||O.stems)?'Дорожек ещё нет: при выгрузке трек сначала разложится'+(APP?'':' (в браузере это долго, в программе быстрее)')+'.':''}</span>`:'<span class="m">На деке '+O.deck+' нет трека.</span>';
+  $('#rpMinus').checked=O.minus;$('#rpStems').checked=O.stems;$('#rpOrig').checked=O.orig;$('#rpChords').checked=O.chords;$('#rpMidi').checked=O.midi;$('#rpCues').checked=O.cues;$('#rpLive').checked=O.live;
+  $('#rpMinusL').classList.toggle('off',!stemsOn());$('#rpStemsL').classList.toggle('off',!stemsOn());
+  $('#rpGrid').value=O.grid;$('#rpIn1').value=O.inFirst;$('#rpInN').value=O.inN;$('#rpLiveRow').style.display=O.live?'':'none';
+  const i1=+O.inFirst,i2=i1+(+O.inN)-1;$('#rpInTxt').textContent=i1>10?'= каналы Ui24R '+(i1-10)+'-'+(i2-10):'';
+  const go=$('#rpGo');go.disabled=X.busy||!t;go.innerHTML=X.busy?'Готовлю...':ic('arrowR')+(RPX?'Открыть в Reaper':'Скачать для Reaper (.zip)');
+  $('#rpBarI').style.width=(X.busy||X.p>=1?Math.round(X.p*100):0)+'%';
+  const m=$('#rpMsg');m.className='rpMsg'+(X.cls?' '+X.cls:'');m.textContent=X.msg||(RPX?'Файлы ложатся в Документы\\DJ-пульт\\Reaper\\<трек>, Reaper открывает проект сам.':'В браузере получится архив .zip: распакуйте и откройте .rpp. В программе для Windows Reaper откроется сам.');
+  $('#rpFolderRow').style.display=RPX?'':'none';
+  {const st=RI.st,e=$('#rpTune');e.className='rpMsg'+(st&&st.ok?' ok':st&&!st.ok?' warn':'');
+    e.innerHTML=!RPX?'':!st?(dj.reaperInstall?'Настраиваю Reaper...':''):!st.ok?'Reaper не настроился сам: '+esc(st.err||'папка Reaper не найдена')+'. Скрипты есть в папке проекта.':
+      'Reaper настроен: проекты из пульта открываются с автотюном на вокале ('+(st.graillon?'<b>Graillon 3</b>, тональность песни в нём выставляется сама':st.gsnap?'<b>GSnap</b>':'<b>ReaTune</b> - лучше поставить бесплатный Graillon 3')+'), действие "микс в пульт" есть в списке действий Reaper.'+(st.plugins&&st.plugins.moved&&st.plugins.moved.length?' Плагин '+esc(st.plugins.moved.join(', '))+' перенесён из Загрузок в папку плагинов Windows: перезапустите Reaper один раз.':'');}
+  const bk=$('#rpBack');
+  if(RPX)bk.innerHTML=`<button class="rpBig${O.watch?' on':''}" data-rp="watch">${O.watch?'Забирать миксы из Reaper: вкл':'Забирать миксы из Reaper: выкл'}</button>
+    <div class="rpBox"><div class="rpMsg" style="margin:2px 0">Папка:</div><div class="rpPath">${esc(W.inbox||'Документы\\DJ-пульт\\Из Reaper')}</div></div>
+    <div class="rpRow"><span>В плейлист</span><div class="seg" style="flex:1"><button data-rp="list" data-v="A" class="${O.wlist==='A'?'on':''}">Треки A</button><button data-rp="list" data-v="B" class="${O.wlist==='B'?'on':''}">Треки B</button></div><button data-rp="inbox">Открыть папку</button></div>
+    <div class="rpMsg">${O.watch?'Новый файл в этой папке сразу попадает в плейлист. ':''}${W.n?'Пришло из Reaper: <b>'+W.n+'</b>, последний - '+esc(W.last)+'. ':''}В Reaper запустите скрипт "DJ-пульт - микс в пульт" (он лежит в папке проекта): он рендерит проект в эту папку. Любой WAV или MP3, сохранённый туда вручную, тоже попадёт в плейлист.</div>`;
+  else bk.innerHTML=`<div class="rpMsg">${APP?'Обновите программу до версии 1.0.18: в ней пульт сам забирает миксы из Reaper.':'В программе для Windows пульт сам забирает готовые миксы из Reaper. В браузере перетащите отрендеренный файл в плейлист.'}</div>`;
+  $('#rpClk').checked=O.clk;
+  const outs=ckOuts(),sel=$('#rpClkOut');
+  sel.innerHTML=(outs.length?'<option value="">- выберите -</option>':'<option value="">'+(CK.acc?'нет выходов MIDI':'включите галочку выше')+'</option>')+outs.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+  sel.value=CK.out?CK.out.id:'';$('#rpMs').value=O.clkMs;$('#rpMsV').textContent=O.clkMs;
+  const cd=ckDeck(),cm=$('#rpClkMsg');
+  cm.className='rpMsg'+(O.clk&&!CK.out?' warn':O.clk&&CK.run?' ok':'');
+  cm.textContent=!O.clk?'Выключено.':CK.err?CK.err:!CK.out?'Выберите выход MIDI (виртуальный кабель к Reaper).':CK.run?'Идёт: дека '+cd.id+', '+(cd.bpm*cd.curRate()).toFixed(1)+' BPM':'Ждёт: запустите деку '+(O.clkDeck==='auto'?'':O.clkDeck);
+  updBtn();}
+setInterval(()=>{if(open&&!X.busy)render();},1000);
+if(RPX)watchApply().then(()=>rpInstall());
+{const h=$('#rpHelp');if(APP)h.remove();else h.innerHTML='<b>Нет Reaper?</b> Это программа для записи и сведения звука (Windows и Mac). Её можно бесплатно скачать на <a href="https://www.reaper.fm/download.php" target="_blank" rel="noopener">reaper.fm</a>: 60 дней работает без ограничений. Без Reaper архив тоже пригодится: минусовка и дорожки внутри - обычные WAV, их откроет любой плеер или звуковая программа.<br>Входы для живого вокала: 13-16 - это каналы 3-6 микшера Ui24R. С обычной звуковой картой поставьте "с 1".';}
+if(O.clk)ckApply();
+window.REAPER={layout,makeRpp:(t,o)=>makeRpp(t,layout(t),o&&o.tracks||[],Object.assign({chords:true,midi:true,cues:true,live:true,inFirst:13,inN:4},o||{})),luaBack,luaTune,zip,wav24,crc32,exportTrack,O,CK,toggle};
 })();
 </script>
 <style id="kurs-style">
