@@ -1326,6 +1326,21 @@ body.mob.land[data-mt=pads] .pad{aspect-ratio:auto;min-height:72px}
 body.mob .banks button{min-height:38px}
 body.mob .trk{min-height:44px}
 </style>
+<style id="pads-fix">
+/* окно пэдов (14.11): всегда поверх пульта и в видимой части экрана */
+body[data-skin].lay-float .padsWrap{position:fixed}
+body.lay-float .padsWrap{z-index:40}
+/* телефон: вкладка "Пэды" показывает пэды всегда */
+body.mob[data-mt=pads] .padsWrap{display:block!important}
+/* телефон: кнопка "Пэды" в шапке - окно поверх текущей вкладки */
+body.mob:not([data-mt=pads]):not(.pads-closed):not(.uiNoPads) .app>.side{display:block!important;height:0!important;padding:0!important;margin:0!important;overflow:visible!important}
+body.mob:not([data-mt=pads]):not(.pads-closed) .padsWrap{position:fixed!important;z-index:45!important;left:max(6px,env(safe-area-inset-left))!important;right:max(6px,env(safe-area-inset-right))!important;top:var(--fym,58px)!important;width:auto!important;
+  max-height:calc(100vh - var(--fym,58px) - var(--mobH) - env(safe-area-inset-bottom) - 12px)!important;overflow:auto!important;box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px #3a3f4d!important}
+body.mob:not([data-mt=pads]):not(.pads-closed) .padsWrap .phead{cursor:move;touch-action:none}
+body.mob:not([data-mt=pads]):not(.pads-closed) #padClose{display:inline-block}
+body.mob[data-mt=pads] #padClose{display:none}
+body[data-skin=aurora].mob:not([data-mt=pads]):not(.pads-closed) .padsWrap{background:rgba(12,14,30,.97)!important}
+</style>
 </head>
 <body class="lay-bottom">
 <header>
@@ -3834,17 +3849,23 @@ function setLayout(l,save=true){
 }
 document.querySelectorAll('.laysw button').forEach(b=>b.addEventListener('click',()=>setLayout(b.dataset.lay)));
 // pads: one header button opens / hides the floating pads window (the old "bottom / side" places are gone)
-const padsBtn=$('#padsBtn'),padsOpen=o=>{body.classList.toggle('pads-closed',!o);padsBtn.classList.toggle('on',o);store.set('dj-pads-open',o?'1':'0');decks.forEach(d=>d.dirty=true);};
+// keep the pads window inside the screen (a saved place can be off-screen after a window resize or another monitor)
+const padsFit=()=>{if(body.classList.contains('pads-closed'))return;const r=padsWrap.getBoundingClientRect();if(!r.width)return;const mob=body.classList.contains('mob');
+  if(mob){const y=clamp(r.top,50,Math.max(50,window.innerHeight*.35));if(Math.abs(y-r.top)>1)padsWrap.style.setProperty('--fym',Math.round(y)+'px');return;}
+  const maxY=Math.max(44,window.innerHeight-Math.max(120,r.height+8)),x=clamp(r.left,0,Math.max(0,window.innerWidth-r.width)),y=clamp(r.top,44,maxY);
+  if(Math.abs(x-r.left)>1)padsWrap.style.setProperty('--fx',Math.round(x)+'px');if(Math.abs(y-r.top)>1)padsWrap.style.setProperty('--fy',Math.round(y)+'px');};
+const padsBtn=$('#padsBtn'),padsOpen=o=>{body.classList.toggle('pads-closed',!o);padsBtn.classList.toggle('on',o);store.set('dj-pads-open',o?'1':'0');decks.forEach(d=>d.dirty=true);if(o)requestAnimationFrame(padsFit);};
+window.addEventListener('resize',()=>requestAnimationFrame(padsFit));
 padsBtn.addEventListener('click',()=>padsOpen(body.classList.contains('pads-closed')));
 $('#padClose').addEventListener('click',()=>padsOpen(false));
 $('#fab').addEventListener('click',()=>padsOpen(true));
 (()=>{const h=$('#phead');let sx,sy,ox,oy,drag=false;
   const pos=store.get('dj-float');if(pos){try{const [x,y]=JSON.parse(pos);padsWrap.style.setProperty('--fx',x+'px');padsWrap.style.setProperty('--fy',y+'px');}catch(e){}}
-  h.addEventListener('pointerdown',e=>{if(!body.classList.contains('lay-float')||e.target.closest('button'))return;
+  h.addEventListener('pointerdown',e=>{if(!body.classList.contains('lay-float')||e.target.closest('button')||getComputedStyle(padsWrap).position!=='fixed')return;
     const r=padsWrap.getBoundingClientRect();sx=e.clientX;sy=e.clientY;ox=r.left;oy=r.top;drag=true;try{h.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
   h.addEventListener('pointermove',e=>{if(!drag)return;const r=padsWrap.getBoundingClientRect();
-    padsWrap.style.setProperty('--fx',clamp(ox+e.clientX-sx,0,window.innerWidth-r.width)+'px');padsWrap.style.setProperty('--fy',clamp(oy+e.clientY-sy,0,window.innerHeight-60)+'px');});
-  const end=()=>{if(!drag)return;drag=false;const r=padsWrap.getBoundingClientRect();store.set('dj-float',JSON.stringify([Math.round(r.left),Math.round(r.top)]));};
+    padsWrap.style.setProperty('--fx',clamp(ox+e.clientX-sx,0,window.innerWidth-r.width)+'px');{const mob=body.classList.contains('mob');padsWrap.style.setProperty(mob?'--fym':'--fy',clamp(oy+e.clientY-sy,mob?50:44,Math.max(50,window.innerHeight-(mob?160:120)))+'px');}});
+  const end=()=>{if(!drag)return;drag=false;if(body.classList.contains('mob'))return;const r=padsWrap.getBoundingClientRect();store.set('dj-float',JSON.stringify([Math.round(r.left),Math.round(r.top)]));};
   ['pointerup','pointercancel'].forEach(t=>h.addEventListener(t,end));
 })();
 setLayout('float',false);padsOpen(store.get('dj-pads-open')==='1');
@@ -6553,6 +6574,7 @@ function setTab(t,quiet){
   M.scroll[M.tab]=window.scrollY;
   M.tab=t;ls.set('dj-mob-tab',t);if(t==='a'||t==='b')M.lastDeck=t;
   B.dataset.mt=t;
+  if(t==='pads'&&!B.classList.contains('pads-closed')){const c=D.getElementById('padClose');if(c)c.click();} // the tab shows the pads itself, no window on top
   bar.querySelectorAll('.mt').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   if(t==='pl')['A','B'].forEach(id=>{const el=D.getElementById('pl'+id);if(el&&el.classList.contains('closed')){const b=el.querySelector('.plTab');if(b)b.click();}});
   redraw();
