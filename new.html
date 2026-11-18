@@ -218,13 +218,27 @@ html.fx header{background:rgba(12,7,22,.95)}
 .str.hd{opacity:.6}
 .str code{font:800 13px ui-monospace,monospace;letter-spacing:1px;padding:3px 8px;border-radius:8px;background:rgba(34,211,238,.12);color:var(--cy)}
 @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+
+/* меню "Ещё": второстепенные разделы, чтобы на главном пути был один Курс */
+.mnb{order:5;display:flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font:800 13px var(--fb);cursor:pointer;white-space:nowrap}
+.mnb span{font-size:16px;line-height:1}.mnb.on,.mnb[aria-expanded="true"]{border-color:var(--pk);color:#fff}
+.mnu{position:absolute;left:0;right:0;top:100%;z-index:120;padding:0 16px}
+.mnu-in{max-width:760px;margin:8px auto 0;padding:14px;border-radius:18px;background:rgba(18,11,32,.97);border:1px solid var(--line);box-shadow:0 20px 50px -12px rgba(0,0,0,.8)}
+.mnu-h{font:800 12px var(--fb);letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:0 4px 10px}
+.mnu-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mnu-g button{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 10px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);font:700 14px var(--fb);cursor:pointer;text-align:left}
+.mnu-g button:hover,.mnu-g button.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.mnu-g .ic{flex:none;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.mnu-g .ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.mnu-g button.zk b::after{content:" 🔒";font-size:12px}
+@media(max-width:860px){.mnb{order:2}.mnb b{display:none}}
 </style>
 </head>
 <body>
 <header><div class="wrap top">
-  <a class="back" href="https://centrspektr.gitverse.site/spektr/">← СПЕКТР</a><span class="brand">Гитара · ИИ-студия</span>
-  <button class="skb" data-fx-skin title="Сменить живой фон" aria-label="Сменить фон">🎨</button><nav class="tb" id="tb" aria-label="Разделы студии"><button class="tba l" type="button" aria-label="Предыдущий раздел">‹</button><div class="tbt" id="tbt"><button data-t="les" class="on" style="--c:#facc15"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.6C5.6 4 8.6 4 12 6.2c3.4-2.2 6.4-2.2 9-.6V19c-2.6-1.5-5.6-1.5-9 .6-3.4-2.1-6.4-2.1-9-.6z"/><path d="M12 6.2v13.4"/></svg></span><b>Уроки</b></button><button data-t="kurs" style="--c:#a78bfa"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c1.6 1.6 3.4 2.4 5.5 2.4s3.9-.8 5.5-2.4v-5"/><path d="M21.5 9v5.5"/></svg></span><b>Базовый курс</b></button><button data-t="kai" style="--c:#38bdf8"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c1.6 1.6 3.4 2.4 5.5 2.4s3.9-.8 5.5-2.4v-5"/><path d="M19.6 13.6l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/></svg></span><b>Курс с ИИ</b></button><button data-t="put" style="--c:#22c55e"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></svg></span><b>Путь</b></button><button data-t="chords" style="--c:#ff2d8a"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.2 9.8 6-6"/><path d="m18.4 2.4 3.2 3.2"/><path d="M11.6 8.3c-1.7-.6-3.6-.3-4.8 1-.8.8-1.1 1.9-1.1 3-1.6.2-3 .9-3.6 2.2-1 2.1.2 4.8 2.5 6.1 2.4 1.3 5.3.9 6.4-1 .6-1.1.6-2.5.1-3.7 1.1-.1 2.1-.4 2.8-1.1 1.3-1.3 1.6-3.2 1-4.8"/><circle cx="9.4" cy="14.6" r="1.7"/></svg></span><b>Аккорды</b></button><button data-t="ref" style="--c:#22d3ee"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.6"/><path d="M9.2 4V2.8h5.6V4"/><path d="M8.6 10h6.8M8.6 13.5h6.8M8.6 17h4"/></svg></span><b>Шпаргалка</b></button><button data-t="tuner" style="--c:#22c55e"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 17.2a8.4 8.4 0 1 1 16.8 0"/><path d="m12 17.2 4.2-6.4"/><circle cx="12" cy="17.2" r="1.5"/><path d="M12 6.4v1.6M6.1 9.4l1.1 1.1M17.9 9.4l-1.1 1.1"/></svg></span><b>Тюнер</b></button><button data-t="metro" style="--c:#fb923c"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l4.2 18H4.8z"/><path d="m12 15.2 5.2-9.4"/><path d="M7.3 15.2h9.4"/></svg></span><b>Метроном</b></button><button data-t="pult" style="--c:#38f5c8"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="10" r="2.6"/><circle cx="15.5" cy="10" r="2.6"/><path d="M7 16.5h3M14 16.5h3"/></svg></span><b>Пульт</b></button><button data-t="games" style="--c:#a78bfa"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h10a4 4 0 0 1 3.9 3.1l.9 4.3a2.6 2.6 0 0 1-4.7 2l-1.6-2.4H8.5l-1.6 2.4a2.6 2.6 0 0 1-4.7-2l.9-4.3A4 4 0 0 1 7 8z"/><path d="M8 10.5v3M6.5 12h3"/><circle cx="15.6" cy="11" r=".6"/><circle cx="17.6" cy="13" r=".6"/></svg></span><b>Игры</b></button><button data-t="ai" style="--c:#f472b6"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 18V6.2l10-2.2v12"/><circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/><path d="M4.2 3.2l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"/></svg></span><b>Музыка с ИИ</b></button><button data-t="rate" style="--c:#fde047"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M16 5.6h3V7a3 3 0 0 1-3 3M8 5.6H5V7a3 3 0 0 0 3 3"/><path d="M12 13v3.6M9 20.6h6M9.8 16.6h4.4l.5 4h-5.4z"/></svg></span><b>Рейтинг</b></button></div><button class="tba r" type="button" aria-label="Следующий раздел">›</button></nav>
-</div></header>
+  <span class="brand">Гитара · ИИ-студия</span>
+  <button class="mnb" id="mnb" type="button" aria-expanded="false" aria-controls="mnu" title="Другие разделы"><span>☰</span><b id="mnbT">Ещё</b></button><button class="skb" data-fx-skin title="Сменить живой фон" aria-label="Сменить фон">🎨</button><nav class="tb" id="tb" aria-label="Разделы студии"><button class="tba l" type="button" aria-label="Предыдущий раздел">‹</button><div class="tbt" id="tbt"><button data-t="kurs" class="on" style="--c:#a78bfa"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c1.6 1.6 3.4 2.4 5.5 2.4s3.9-.8 5.5-2.4v-5"/><path d="M21.5 9v5.5"/></svg></span><b>Курс</b></button><button data-t="chords" style="--c:#ff2d8a"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.2 9.8 6-6"/><path d="m18.4 2.4 3.2 3.2"/><path d="M11.6 8.3c-1.7-.6-3.6-.3-4.8 1-.8.8-1.1 1.9-1.1 3-1.6.2-3 .9-3.6 2.2-1 2.1.2 4.8 2.5 6.1 2.4 1.3 5.3.9 6.4-1 .6-1.1.6-2.5.1-3.7 1.1-.1 2.1-.4 2.8-1.1 1.3-1.3 1.6-3.2 1-4.8"/><circle cx="9.4" cy="14.6" r="1.7"/></svg></span><b>Аккорды</b></button><button data-t="tuner" style="--c:#22c55e"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 17.2a8.4 8.4 0 1 1 16.8 0"/><path d="m12 17.2 4.2-6.4"/><circle cx="12" cy="17.2" r="1.5"/><path d="M12 6.4v1.6M6.1 9.4l1.1 1.1M17.9 9.4l-1.1 1.1"/></svg></span><b>Тюнер</b></button><button data-t="metro" style="--c:#fb923c"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l4.2 18H4.8z"/><path d="m12 15.2 5.2-9.4"/><path d="M7.3 15.2h9.4"/></svg></span><b>Метроном</b></button></div><button class="tba r" type="button" aria-label="Следующий раздел">›</button></nav>
+</div><div class="mnu" id="mnu" hidden><div class="mnu-in"><div class="mnu-h">Другие разделы</div><div class="mnu-g"><button data-t="les" style="--c:#facc15"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.6C5.6 4 8.6 4 12 6.2c3.4-2.2 6.4-2.2 9-.6V19c-2.6-1.5-5.6-1.5-9 .6-3.4-2.1-6.4-2.1-9-.6z"/><path d="M12 6.2v13.4"/></svg></span><b>Уроки</b></button><button data-t="ref" style="--c:#22d3ee"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2.6"/><path d="M9.2 4V2.8h5.6V4"/><path d="M8.6 10h6.8M8.6 13.5h6.8M8.6 17h4"/></svg></span><b>Шпаргалка</b></button><button data-t="games" style="--c:#a78bfa"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h10a4 4 0 0 1 3.9 3.1l.9 4.3a2.6 2.6 0 0 1-4.7 2l-1.6-2.4H8.5l-1.6 2.4a2.6 2.6 0 0 1-4.7-2l.9-4.3A4 4 0 0 1 7 8z"/><path d="M8 10.5v3M6.5 12h3"/><circle cx="15.6" cy="11" r=".6"/><circle cx="17.6" cy="13" r=".6"/></svg></span><b>Игры</b></button><button data-t="ai" style="--c:#f472b6"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 18V6.2l10-2.2v12"/><circle cx="7" cy="18" r="2.5"/><circle cx="17" cy="16" r="2.5"/><path d="M4.2 3.2l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7z"/></svg></span><b>Музыка с ИИ</b></button><button data-t="pult" style="--c:#38f5c8"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="10" r="2.6"/><circle cx="15.5" cy="10" r="2.6"/><path d="M7 16.5h3M14 16.5h3"/></svg></span><b>Пульт</b></button><button data-t="put" style="--c:#22c55e"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></svg></span><b>Путь</b></button><button data-t="rate" style="--c:#fde047"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M16 5.6h3V7a3 3 0 0 1-3 3M8 5.6H5V7a3 3 0 0 0 3 3"/><path d="M12 13v3.6M9 20.6h6M9.8 16.6h4.4l.5 4h-5.4z"/></svg></span><b>Рейтинг</b></button><button data-t="kai" style="--c:#38bdf8"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c1.6 1.6 3.4 2.4 5.5 2.4s3.9-.8 5.5-2.4v-5"/><path d="M19.6 13.6l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/></svg></span><b>Курс с ИИ</b></button></div></div></div></header>
 <main class="wrap">
   <section class="hero"><div class="ph"><img src="studio.webp" alt=""></div><canvas id="eq"></canvas>
     <div class="hin"><small>РЕСУРСНЫЙ ЦЕНТР СПЕКТР</small><h1>Гитара и <span>ИИ</span>-студия</h1><p>Учимся по урокам: бой, перебор, аккорды и немного нот. Тюнер и метроном всегда под рукой, а свои треки создаём вместе с нейросетями.</p>
@@ -236,7 +250,7 @@ html.fx header{background:rgba(12,7,22,.95)}
     <h2 class="sec">Обучающий курс <em>Гитары с ИИ</em></h2><p class="sub">Отдельный курс: шаг за шагом учимся играть и создавать свою музыку вместе с нейросетями.</p>
     <div class="card" id="kaiBox"><p class="muted">Курс скоро откроется.</p></div>
   </div>
-  <div id="zag" class="zag" hidden><div class="card"><img src="studio.webp" alt=""><h3>Раздел обновляется - скоро откроется!</h3><p class="muted">А пока загляни в Уроки.</p><button class="btn pri" type="button" onclick="show('les')">🎸 Уроки</button></div></div>
+  <div id="zag" class="zag" hidden><div class="card"><img src="studio.webp" alt=""><h3>Раздел обновляется - скоро откроется!</h3><p class="muted">А пока продолжай Курс.</p><button class="btn pri" type="button" onclick="show('kurs')">🎓 Курс</button></div></div>
 
   <div class="tab" id="t-put" hidden></div>
   <div class="tab" id="t-chords" hidden>
@@ -389,8 +403,14 @@ window.tabFx=function(el,dir,wave){
     c.animate([{opacity:0,transform:`translate(${dx}px,30px) scale(.96) rotateX(8deg)`,filter:soft?'blur(6px)':'none'},{opacity:1,offset:.6},{opacity:1,transform:'none',filter:'none'}],{duration:680,delay:60+i*75,easing:'cubic-bezier(.2,.9,.25,1)',fill:'backwards'})});
   if(!wave)return;const w=document.createElement('div');w.className='tabwave';document.body.appendChild(w);
   w.animate([{transform:`translateX(${dir<0?100:-100}%)`,opacity:0},{opacity:1,offset:.25},{opacity:1,offset:.7},{transform:`translateX(${dir<0?-100:100}%)`,opacity:0}],{duration:850,easing:'cubic-bezier(.45,.05,.35,1)'}).onfinish=()=>w.remove()};
-function show(t){const pv=TAB,OR=$$('#tbt button').map(b=>b.dataset.t);TAB=t;$$('#tbt button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));moveTbi();$$('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);if(pv!==t)requestAnimationFrame(()=>tabFx($('#t-'+t),pv?Math.sign(OR.indexOf(t)-OR.indexOf(pv)):0,!!pv));try{history.replaceState(null,'','#'+t)}catch(e){}if(window.lesStop)lesStop();if(t!=='games'&&window.rStop)rStop();if(t!=='tuner'&&tStream&&!window.DOCKT)tOff()}
-$$('#tbt button').forEach(b=>b.onclick=()=>{tbProg=Date.now();show(b.dataset.t);const el=$('#t-'+b.dataset.t);if(el.getBoundingClientRect().top<0||scrollY>200)el.scrollIntoView({behavior:'smooth'})});addEventListener('resize',moveTbi);
+/* меню "Ещё" */
+function mnSync(t){const b=$('#mnu button[data-t="'+t+'"]'),k=$('#mnb');if(!k)return;k.classList.toggle('on',!!b);$('#mnbT').textContent=b?b.querySelector('b').textContent:'Ещё'}
+function mnOpen(v){const m=$('#mnu'),k=$('#mnb');if(!m)return;if(v==null)v=m.hidden;m.hidden=!v;k.setAttribute('aria-expanded',v)}
+$('#mnb').onclick=e=>{e.stopPropagation();mnOpen()};
+document.addEventListener('click',e=>{if(!e.target.closest('#mnu,#mnb'))mnOpen(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')mnOpen(false)});
+function show(t){const pv=TAB,OR=$$('#tbt button').map(b=>b.dataset.t);TAB=t;$$('#tbt button,#mnu button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));mnSync(t);moveTbi();$$('.tab').forEach(x=>x.hidden=x.id!=='t-'+t);if(pv!==t)requestAnimationFrame(()=>tabFx($('#t-'+t),pv?Math.sign(OR.indexOf(t)-OR.indexOf(pv)):0,!!pv));try{history.replaceState(null,'','#'+t)}catch(e){}if(window.lesStop)lesStop();if(t!=='games'&&window.rStop)rStop();if(t!=='tuner'&&tStream&&!window.DOCKT)tOff()}
+$$('#tbt button,#mnu button').forEach(b=>b.onclick=()=>{tbProg=Date.now();mnOpen(false);show(b.dataset.t);const el=$('#t-'+b.dataset.t);if(el.getBoundingClientRect().top<0||scrollY>200)el.scrollIntoView({behavior:'smooth'})});addEventListener('resize',moveTbi);
 /* ---------- карусель разделов: плавно, только transform/opacity, без перерисовки страницы ---------- */
 (function(){const B=[...TBT.children];let raf=0,set=0,touch=false,cw=0,mid=[];
   const meas=()=>{cw=TBT.clientWidth;mid=B.map(b=>b.offsetLeft+b.offsetWidth/2)};
@@ -411,7 +431,7 @@ $$('#tbt button').forEach(b=>b.onclick=()=>{tbProg=Date.now();show(b.dataset.t);
 /* ---------- эквалайзер в шапке ---------- */
 (function(){const cv=$('#eq'),cx=cv.getContext('2d');let W,H,t=0,vis=true;const lite=!matchMedia('(hover:hover)').matches;const size=()=>{W=cv.clientWidth;H=cv.clientHeight;cv.width=W;cv.height=H};size();addEventListener('resize',size);
   new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe(cv);
-  function f(){requestAnimationFrame(f);if(!vis||RED)return;t+=lite?.5:1;if(lite&&t%2)return;cx.clearRect(0,0,W,H);const n=Math.floor(W/14),bw=10;
+  function f(){requestAnimationFrame(f);if(!vis||RED)return;if(!W||!H){size();if(!W||!H)return}t+=lite?.5:1;if(lite&&t%2)return;cx.clearRect(0,0,W,H);const n=Math.floor(W/14),bw=10;
     for(let i=0;i<n;i++){const v=(Math.sin(t*.06+i*.45)*.5+.5)*(Math.sin(t*.023+i*.17)*.4+.6)*(.5+.5*Math.sin(i*.9+t*.01));const h=8+v*(H-10);const g=cx.createLinearGradient(0,H-h,0,H);g.addColorStop(0,i%3?'#ff2d8a':'#22d3ee');g.addColorStop(1,'rgba(139,92,246,.2)');cx.fillStyle=g;cx.fillRect(i*14+2,H-h,bw,h)}}f()})();
 /* ---------- аккорды ---------- */
 let grp='Все';
@@ -586,7 +606,7 @@ rPatR();upd();
 })();
 /* ---------- старт ---------- */
 renderChords();renderTrPick();trShow();renderPB();renderMood();saveST();
-const h=location.hash.slice(1);show(['les','kurs','kai','put','chords','ref','tuner','metro','pult','games','ai','rate'].includes(h)?h:'les');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
+const h=location.hash.slice(1);show(['les','kurs','kai','put','chords','ref','tuner','metro','pult','games','ai','rate'].includes(h)?h:'kurs');setTimeout(moveTbi,300);document.fonts&&document.fonts.ready.then(moveTbi);
 </script>
 <script>
 /* Обучающий курс Гитары с ИИ - отдельный продукт (проект "Гитара и ИИ - продукт").
@@ -609,7 +629,7 @@ window.ZAK_DEF = ['kai'];
 (function () {
   var API = 'https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b', CK = 'st_zam';
   var bar = document.getElementById('zkbar'), zag = document.getElementById('zag'), busy = false;
-  var NM = {}; $$('#tbt button').forEach(function (b) { NM[b.dataset.t] = b.querySelector('b').textContent; });
+  var NM = {}; $$('#tbt button,#mnu button').forEach(function (b) { NM[b.dataset.t] = b.querySelector('b').textContent; });
   var L = ZAK_DEF.slice(); try { var c = JSON.parse(localStorage.getItem(CK) || 'null'); if (Array.isArray(c)) L = c; } catch (e) {}
   function tok() {
     try { var t = sessionStorage.getItem('vz_spk_tok'); if (t) return t; var P = JSON.parse(sessionStorage.getItem('spectr_sess') || 'null'); return P && P.token || ''; } catch (e) { return ''; }
@@ -631,7 +651,7 @@ window.ZAK_DEF = ['kai'];
     zag.hidden = !stub; drawBar(t);
   };
   function apply() {
-    $$('#tbt button').forEach(function (b) { b.classList.toggle('zk', zk(b.dataset.t)); });
+    $$('#tbt button,#mnu button').forEach(function (b) { b.classList.toggle('zk', zk(b.dataset.t)); });
     show(TAB);
   }
   async function toggle(t) {
@@ -683,7 +703,7 @@ window.ZAK_DEF = ['kai'];
   if(location.hash==='#rate')load(true);
 })();</script>
 <script src="oshibka.js" data-site="studio" defer></script>
-<script src="put.js" data-site="studio" defer></script><script>window.KURSY={name:'Гитара и ИИ',org:'ИИ-студия',club:'studio',api:'https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b',store:'st_kurs',meKey:'spk_studio',open:['m0','m1'],beta:0,note:'🧪 Курс в тестировании: счётчик очков может обнуляться. Сейчас открыты модули 0 и 1, следующие откроет педагог.',grp:' студии',words:[['Тренер','Педагог'],['тренер','педагог'],['ТРЕНЕР','ПЕДАГОГ']],pinText:'Нужен PIN портала СПЕКТР (тот же, что для заявок).',bar:'header',tabs:'#tbt',role:'st_role',rate:true,pause:20};window.SPK_RESET=function(){try{localStorage.removeItem('studio_prog')}catch(e){}try{ST.got=[];ST.best=0;ST.ear=0;ST.rh=0}catch(e){}};const MODE=(()=>{try{return sessionStorage.getItem('st_role')==='coach'?'coach':'public'}catch(e){return 'public'}})();</script><script src="kurs-zadaniya.js" defer></script><script src="kurs-igry2.js" defer></script><script src="kurs-moduli4.js" defer></script>
+<script src="put.js" data-site="studio" defer></script><script>window.KURSY={name:'Гитара и ИИ',org:'ИИ-студия',club:'studio',api:'https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b',store:'st_kurs',meKey:'spk_studio',open:['m0','m1'],beta:0,note:'🧪 Курс в тестировании: счётчик очков может обнуляться. Сейчас открыты модули 0 и 1, следующие откроет педагог.',grp:' студии',words:[['Тренер','Педагог'],['тренер','педагог'],['ТРЕНЕР','ПЕДАГОГ']],pinText:'Нужен PIN портала СПЕКТР (тот же, что для заявок).',bar:'header',tabs:'#tbt',role:'st_role',rate:true,pause:20};window.SPK_RESET=function(){try{localStorage.removeItem('studio_prog')}catch(e){}try{ST.got=[];ST.best=0;ST.ear=0;ST.rh=0}catch(e){}};const MODE=(()=>{try{return sessionStorage.getItem('st_role')==='coach'?'coach':'public'}catch(e){return 'public'}})();</script><script src="kurs-zadaniya.js" defer></script><script src="kurs-igry2.js" defer></script><script src="kurs-moduli5.js" defer></script>
 <script>if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});</script>
 </body>
 </html>
