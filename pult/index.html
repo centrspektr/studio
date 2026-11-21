@@ -3,6 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<script id="lite-detect">
+/* ===== Простая версия (21.11): телефон, планшет, узкий экран или слабое устройство в браузере.
+   Полный пульт - приложение для Windows и браузер на обычном компьютере.
+   localStorage dj-lite: '1' всегда простая, '0' всегда полная, пусто = авто. В приложении для Windows всегда полная. ===== */
+(()=>{const n=navigator,sc=screen,mm=q=>{try{return matchMedia(q).matches;}catch(e){return false;}};
+  let o=null;try{o=localStorage.getItem('dj-lite');}catch(e){}
+  const pcApp=!!(window.djpult&&window.djpult.isApp)&&!window.DJA;
+  const ua=/Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(n.userAgent)||(/Mac/.test(n.platform||'')&&n.maxTouchPoints>1);
+  const touchOnly=mm('(pointer:coarse)')&&!mm('(any-pointer:fine)');
+  const narrow=Math.min(sc.width,sc.height)<600||sc.width<760;
+  const weak=(n.deviceMemory&&n.deviceMemory<=2)||(n.hardwareConcurrency&&n.hardwareConcurrency<=2);
+  const auto=ua||!!window.DJA||touchOnly||narrow||!!weak;
+  const lite=!pcApp&&(o==='1'?true:o==='0'?false:auto);
+  window.DJ_LITE=lite;window.DJ_LITE_AUTO=!pcApp&&auto;window.DJ_PC_APP=pcApp;
+  if(lite)document.documentElement.classList.add('liteWeb');})();
+</script>
 <title>DJ-пульт - Гитара и ИИ-студия</title>
 
 
@@ -1536,8 +1552,8 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const AC=window.AudioContext||window.webkitAudioContext;
 /* audio buffer: bigger = no stutter on weak PCs, smaller = faster response. Setting "Буфер звука" (dj-lat), applied after restart */
 /* "Эконом" (dj-eco): лёгкая графика + перерисовка 30 раз в секунду + холсты без ретины + большой буфер. Переключает setEco() в блоке стилей */
-const ECO={on:(()=>{try{return localStorage.getItem('dj-eco')==='1';}catch(e){return false;}})()};
-const LAT={s:0.012,m:0.04,l:0.09},latSel=(()=>{try{const v=localStorage.getItem('dj-lat');return LAT[v]?v:'m';}catch(e){return 'm';}})();
+const ECO={on:(()=>{if(window.DJ_LITE)return true;try{return localStorage.getItem('dj-eco')==='1';}catch(e){return false;}})()};
+const LAT={s:0.012,m:0.04,l:0.09},latSel=(()=>{try{const v=localStorage.getItem('dj-lat');return LAT[v]?v:(window.DJ_LITE?'l':'m');}catch(e){return 'm';}})();
 const ctx=(()=>{try{return new AC({latencyHint:LAT[latSel]});}catch(e){return new AC();}})();
 const decode=ab=>new Promise((res,rej)=>ctx.decodeAudioData(ab,res,rej));
 document.addEventListener('pointerdown',()=>{if(ctx.state!=='running')ctx.resume();},true);
@@ -2042,7 +2058,7 @@ function runAnalysis(buf,o){if(o.task==='spec')return {spec:analyzeSpectrum(buf)
   const tb=bpm?trackBeats(buf,bpm,off):null;
   if(auto&&tb&&Math.abs(tb.bpm/bpm-1)<0.04){bpm=tb.bpm;off=tb.offset;}   // average tempo over the whole song is more exact than the first estimate
   if(o.task!=='chords'){out.bpm=bpm;out.offset=off;out.key=detectKey(buf);out.spec=analyzeSpectrum(buf);}
-  out.chords=bpm?detectChords(buf,bpm,off,o.task==='chords'?o.key:out.key,tb&&tb.beats,true):null;if(out.chords)out.chords.deep=1;return out;}   // always the exact pass (6 looks per beat)
+  out.chords=bpm&&!o.noCh?detectChords(buf,bpm,off,o.task==='chords'?o.key:out.key,tb&&tb.beats,true):null;if(out.chords)out.chords.deep=1;return out;}   // always the exact pass (6 looks per beat)
 const CHORDS=buildChords();
 let anWorker=null;const anJobs={};let anId=0;
 try{const src=`const KS_MAJ=${JSON.stringify(KS_MAJ)},KS_MIN=${JSON.stringify(KS_MIN)},CH_TYPES=${JSON.stringify(CH_TYPES)};\n`+
@@ -2052,7 +2068,7 @@ try{const src=`const KS_MAJ=${JSON.stringify(KS_MAJ)},KS_MIN=${JSON.stringify(KS
   anWorker.onmessage=e=>{const j=anJobs[e.data.id];delete anJobs[e.data.id];if(!j)return;if(e.data.out&&e.data.out.error)j.local();else j.res(e.data.out);};
   anWorker.onerror=()=>{anWorker=null;for(const id in anJobs){const j=anJobs[id];delete anJobs[id];j.local();}};
 }catch(e){anWorker=null;}
-function analyze(buf,o){return new Promise(res=>{const local=()=>setTimeout(()=>res(runAnalysis(buf,o)),20);
+function analyze(buf,o){if(window.DJ_LITE&&o&&!o.task)o={...o,noCh:1};return new Promise(res=>{const local=()=>setTimeout(()=>res(runAnalysis(buf,o)),20);
   if(!anWorker){local();return;}const id=++anId;anJobs[id]={res,local};
   const chs=[];for(let c=0;c<Math.min(2,buf.numberOfChannels);c++)chs.push(buf.getChannelData(c).slice());
   anWorker.postMessage({id,chs,sr:buf.sampleRate,o},chs.map(a=>a.buffer));});}
@@ -3400,8 +3416,9 @@ class Deck{
     if(Math.abs(jn)>0.002||this.jogN!==0){this.jogN=Math.abs(jn)>0.002?jn:0;this.applyRate();}
     this.advance();
     if(this.playing&&this.jog==null)this.angle+=200*dt*this.curRate();
+    if(window.DJ_COVER){if(this.playing)this.dirty=true;}else{
     {const a=this.angle%360;if(a!==this._da){this._da=a;this.discIn.style.transform=`rotate(${a}deg)`;}}
-    if(this.playing||this.dirty){this.curEl.textContent=mmss(this.pos);this.draw();this.dirty=false;}
+    if(this.playing||this.dirty){const tx=mmss(this.pos);if(this.curEl.textContent!==tx)this.curEl.textContent=tx;this.draw();this.dirty=false;}}
     this.loopSched();this.scheduleGuitar();this.updateGuitarUI();
   }
   sizeC(c){const dpr=ECO.on?1:(window.devicePixelRatio||1),[cw,ch]=cvSize(c),w=Math.round(cw*dpr),h=Math.round(ch*dpr);if(w&&h&&(c.width!==w||c.height!==h)){c.width=w;c.height=h;}return [w,h,dpr];}
@@ -3895,7 +3912,8 @@ const meter=$('#meter'),mcx=meter.getContext('2d'),mbuf=new Float32Array(analyse
 function frame(now){
   if(ECO.on&&now-last<31){requestAnimationFrame(frame);return;}
   const dt=Math.min(0.1,(now-last)/1000);last=now;
-  decks.forEach(d=>{d.tick(dt);d.drawLive();});
+  decks.forEach(d=>{d.tick(dt);if(!window.DJ_COVER)d.drawLive();});
+  if(window.DJ_COVER){requestAnimationFrame(frame);return;}
   if(GW.open)drawGTL();
   if(recorder)$('#recT').textContent=mmss((now-recT0)/1000);
   const dpr=ECO.on?1:(window.devicePixelRatio||1),[mw0,mh0]=cvSize(meter),w=Math.round(mw0*dpr),h=Math.round(mh0*dpr);
@@ -4070,7 +4088,7 @@ drawer.addEventListener('click',e=>{const t=e.target.closest('.uiTog');if(!t)ret
   else if(t.dataset.o==='anim'){UI.anim=!UI.anim;save();applyAnim();}
   else if(t.dataset.o==='lite'){UI.lite=!UI.lite;save();applyAnim();}
   else if(t.dataset.o==='eco')setEco(!ECO.on);});
-function setEco(on){ECO.on=!!on;store.set('dj-eco',on?'1':'0');
+function setEco(on){if(window.DJ_LITE)on=true;ECO.on=!!on;if(!window.DJ_LITE)store.set('dj-eco',on?'1':'0');
   // буфер звука: в экономе большой (меньше пробуждений звукового потока, нет заиканий). Применяется после перезапуска
   let cur='m';try{cur=localStorage.getItem('dj-lat')||'m';}catch(e){}
   if(on&&cur!=='l'){store.set('dj-eco-lat',cur);store.set('dj-lat','l');}
@@ -4109,7 +4127,9 @@ document.addEventListener('pointerdown',e=>{if(!UI.anim)return;const b=e.target.
 function beat(){
   const on=UI.anim&&!UI.lite&&!ECO.on&&UI.skin!=='studio';
   decks.forEach(d=>{let v=0;if(on&&d.playing&&d.bpm){const ph=(((d.audiblePos()-d.offset)/d.period)%1+1)%1;v=Math.pow(1-ph,3);}
-    if(Math.abs(v-(d._bp||0))>0.02||(v===0&&d._bp)){d._bp=v;d.el.style.setProperty('--bp',v.toFixed(2));}});
+    if(window.DJ_COVER)v=0;
+    if(Math.abs(v-(d._bp||0))>0.02||(v===0&&d._bp)){d._bp=v;if(!d._bpEl||!d._bpEl[0]||!d._bpEl[0].isConnected)d._bpEl=[...d.el.querySelectorAll('.play,.dlabel,.disc')];
+      const tv=v.toFixed(2);d._bpEl.forEach(e=>e.style.setProperty('--bp',tv));}});
   requestAnimationFrame(beat);}
 
 /* ----- init ----- */
@@ -4611,7 +4631,7 @@ function beatEls(){decks.forEach(d=>{const t=d.el.querySelector('.time');if(!t)r
   if(!s){s=document.createElement('span');s.className='sgBeat';s.title='Доля в такте';s.innerHTML='<i></i><i></i><i></i><i></i>';t.insertBefore(s,t.querySelector('.bpmBox'));}
   d._sgB=[...s.children];d._sgN=-2;});}
 function beatTick(){
-  if(isNew())decks.forEach(d=>{let n=-1;
+  if(isNew()&&!window.DJ_COVER)decks.forEach(d=>{let n=-1;
     if(d.track&&d.bpm&&d.period>0){const p=(d.playing?d.audiblePos():d.pos)-d.offset,k=Math.floor(p/d.period+1e-4);n=((k%4)+4)%4;}
     if(n!==d._sgN&&d._sgB){d._sgN=n;d._sgB.forEach((e,i)=>e.classList.toggle('on',i===n));}});
   requestAnimationFrame(beatTick);}
@@ -4649,7 +4669,7 @@ function auDraw(t){
     const lg=g.createLinearGradient(0,y0-amp,0,y0+H*0.35);lg.addColorStop(0,`hsla(${hue+40-j*30},85%,${50+10*L}%,${0.10+0.14*L})`);lg.addColorStop(1,'hsla(0,0%,0%,0)');g.fillStyle=lg;g.fill();}
 }
 function auFrame(t){raf=0;if(skin()!=='aurora'){return;}
-  if(t-lastF>33){lastF=t;auDraw(t);}
+  if(t-lastF>33&&!window.DJ_COVER){lastF=t;auDraw(t);}
   if(anim())raf=requestAnimationFrame(auFrame);}
 /* смена стиля */
 function onSkin(){if(isNew())ticks();
@@ -5748,7 +5768,7 @@ const SHORT={vocals:'Голос',drums:'Бараб.',bass:'Бас',other:'Муз
 const ls={get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}}};
 const APP=()=>!!(window.djpult&&typeof window.djpult.separate==='function');
 const OPT={auto:ls.get('dj-st-auto'),q:ls.get('dj-st-q')||'fast'};
-const autoOn=()=>OPT.auto==null?APP():OPT.auto==='1';
+const autoOn=()=>!window.DJ_LITE&&(OPT.auto==null?APP():OPT.auto==='1');
 const S={run:new Map(),prog:new Map(),q:[],busy:null,mem:new Map(),db:null,pend:new Map()};
 const keyOf=t=>t.stems&&t.stems.k?t.stems.k:(t.id!=null?'id'+t.id:'n'+t.name+'|'+Math.round((t.duration||0)*10));
 const fire=(n,d)=>{try{window.dispatchEvent(new CustomEvent(n,{detail:d}));}catch(e){}};
@@ -5843,7 +5863,7 @@ async function appSeparate(L,R,sr,prog,job){
 /* ---------- queue ---------- */
 function setState(t,st){fire('stems-state',{track:t,state:st});ui();}
 function run(t,opt){
-  if(!t||!t.blob)return Promise.resolve(false);
+  if(!t||!t.blob||window.DJ_LITE)return Promise.resolve(false);
   if(has(t))return Promise.resolve(true);
   if(S.run.has(t))return S.run.get(t).p;
   const job={t,opt:opt||{}};job.p=new Promise((res)=>{job.res=res;});S.run.set(t,job);S.prog.set(t,0);S.q.push(job);setState(t,'run');pump();return job.p;}
@@ -8256,6 +8276,26 @@ body[data-skin=hw] .glWin,body[data-skin=aurora] .glWin{--gl-grid:rgba(255,255,2
 #glBtn.on{border-color:var(--Y);color:var(--txt)}
 body.lite .glWin *{transition:none!important}
 @media (max-width:900px){.glHead{width:120px;flex-basis:120px}.glRuler,.glScroll,.glScroll#glScR{margin-left:120px}.glResLane{padding-left:120px}.glTime{min-width:70px}}
+
+.glLane{position:relative}
+.glCur{position:absolute;top:0;bottom:0;left:0;width:2px;margin-left:-1px;pointer-events:none;will-change:transform;z-index:3;background:var(--txt)}
+.glCur.r{background:var(--Y);box-shadow:0 0 0 .5px rgba(0,0,0,.35)}
+
+/* the pult under the full-screen window is not painted */
+body.glOpen>header,body.glOpen>.app,body.glOpen>.foot,body.glOpen>#gWin,body.glOpen>.padsWrap{visibility:hidden}
+
+/* Reaper mode (main): only the takes + guide; the montage in the pult hides under "Собрать здесь" */
+.glWin.glR .glM,.glWin.glR #glBar,.glWin.glR .glResArea,.glWin.glR #glInsp{display:none!important}
+.glMw{display:contents}
+.glGuide{display:none}
+.glWin.glR .glGuide{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;padding:10px 14px;border-top:1px solid var(--gl-line);background:var(--gl-pan);color:var(--mut);font-size:12px;line-height:1.5}
+.glGuide>b{color:var(--txt)}.glGuide span b{color:var(--txt)}
+.glGuide i{font-style:normal;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--Y);color:#000;font-weight:700;font-size:11px;margin-right:6px}
+.glGuide small{flex-basis:100%;opacity:.8}.glGuide .ico{width:12px;height:12px;vertical-align:-2px}
+.glWin.glR #glLanes{font-size:13px;padding:0 14px;height:30px;border-color:var(--Y);color:var(--txt)}
+.glRef{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--Y);font-weight:700}
+.glGuide svg,.glGuide .ico{display:inline-block!important;width:12px;height:12px;vertical-align:-2px}
+.glFld input::placeholder{color:var(--mut);opacity:1}
 </style>
 <script id="gl-script">
 (()=>{
@@ -8699,8 +8739,19 @@ function swapPlay(b){const p=ST.play,pos=playPos();if(pos==null)return;try{const
   ST.play=startNode(b,pos,'res');$g('#glPlay').classList.add('on');}
 function playSrc(s,t){stopPlay();ST.play=startNode(s.buf,t,'src',{s:s.id});ST.curS={s:s.id,t};loop();}
 function loop(){if(ST.loopOn)return;ST.loopOn=true;const f=()=>{if(!ST.play||!ST.open){ST.loopOn=false;UI.dirty();return;}
-  const p=playPos();if(ST.play.kind==='res'){ST.curR=p-PAD;follow();}else ST.curS={s:ST.play.s,t:p};draw();syncTime();requestAnimationFrame(f);};requestAnimationFrame(f);}
-function follow(){const w=cvW('#glResCv');if(!w)return;const x=(ST.curR-ST.xr)*ST.zr;if(x>w*0.92||x<0){ST.xr=Math.max(0,ST.curR-w*0.1/ST.zr);}}
+  const p=dispPos();const ox=ST.xr,oxs=ST.xs;if(ST.play.kind==='res'){ST.curR=p-PAD;follow();}else{ST.curS={s:ST.play.s,t:p};followS();}
+  if(ST.xr!==ox||ST.xs!==oxs)draw();else{drawCursors();syncTime();}requestAnimationFrame(f);};requestAnimationFrame(f);}
+// what is heard now: the audio clock runs ahead of the speakers by the output latency
+const dispPos=()=>{const p=ST.play;if(!p)return null;const lat=(ctx.outputLatency||0)||(ctx.baseLatency||0);return p.off+Math.max(0,ctx.currentTime-p.t0-lat);};
+function follow(){const w=ST.rw||cvW('#glResCv');if(!w)return;const x=(ST.curR-ST.xr)*ST.zr;if(x>w*0.92||x<0){ST.xr=Math.max(0,ST.curR-w*0.1/ST.zr);}}
+function followS(){const w=ST.cw;if(!w||!ST.curS)return;const x=(ST.curS.t-ST.xs)*ST.zs;if(x>w*0.92||x<0){ST.xs=Math.max(0,ST.curS.t-w*0.1/ST.zs);}}
+/* cursors are thin divs over the canvases: moving them costs nothing, the waves stay drawn */
+function curDiv(id,cls){let e=document.getElementById(id);if(!e){e=document.createElement('div');e.id=id;e.className='glCur '+cls;}return e;}
+function placeCur(e,x,w,off){if(x<-1||x>w+1){if(e.style.display!=='none')e.style.display='none';return;}if(e.style.display)e.style.display='';e.style.transform='translateX('+(off+x).toFixed(1)+'px)';}
+function drawCursors(){if(!ST.open||!PRJ)return;
+  const eS=curDiv('glCurS','s'),cs=ST.curS,lane=cs&&$g('#glSrcs .glLane[data-id="'+cs.s+'"]');
+  if(lane){if(eS.parentNode!==lane)lane.appendChild(eS);placeCur(eS,st2x(cs.t),ST.cw||0,ST.cl0||0);}else if(eS.parentNode)eS.remove();
+  const eR=curDiv('glCurR','r'),rl=$g('#glWin .glResLane');if(rl){if(eR.parentNode!==rl)rl.appendChild(eR);placeCur(eR,rt2x(ST.curR),ST.rw||0,ST.rl0||0);}}
 function listenJoint(i){const m=ST.mix&&ST.mix.marks.find(k=>k.i===i);if(!m||m.joint==null)return;const a=Math.max(0,m.joint-2.2);ST.curR=a;playRes(a,m.joint+1.8);}
 /* ---------- markup ---------- */
 const btnIc=(id,icn,txt,tit,cls)=>`<button class="sm ${cls||''}" id="${id}" title="${esc(tit)}">${icn?ic(icn):''}${txt||''}</button>`;
@@ -8709,13 +8760,15 @@ function buildWin(){if($g('#glWin'))return;const w=document.createElement('div')
   <div class="glTitle">${ic('layers')||''}Склейка</div>
   ${btnIc('glAdd','plus','Записи','Добавить записи (можно перетащить файлы прямо в окно)')}
   <div class="seg glDeck" title="Взять трек с деки"><button data-d="A">С деки A</button><button data-d="B">B</button></div>
+  ${btnIc('glLanes','arrowR','Дубли в Reaper','Подогнать все записи по темпу, тону и строю и открыть в Reaper дорожками друг под другом (там склеивать мышью)','glAddSel')}
+  ${btnIc('glMode','layers','<span class="glMl">Собрать здесь</span>','Простой монтаж прямо в пульте, без Reaper: для быстрых набросков')}
   <span class="glSep"></span>
-  ${btnIc('glPlay','play','','Играть склейку (Пробел)','glBig')}${btnIc('glStop','stop','','Стоп','glBig')}
+  <span class="glM glMw">${btnIc('glPlay','play','','Играть склейку (Пробел)','glBig')}${btnIc('glStop','stop','','Стоп','glBig')}
   <span class="glTime" id="glTime">0:00.0</span>
-  <span class="glSep"></span>
-  <label class="glFld" title="Темп склейки. Сам берётся с первого куска, можно ввести свой">Темп<input id="glBpm" type="number" min="40" max="240" step="0.1"></label>
-  <label class="glFld" title="Тональность склейки. Сама берётся с первого куска">Тон<select id="glKey"></select></label>
-  <div class="seg glAuto" title="Что подгонять само (в мягких пределах: темп до 12%, тон до 2 полутонов). Выключено - только по кнопке у куска">
+  <span class="glSep"></span></span>
+  <label class="glFld" title="Темп, под который подгоняются все дубли. Сам берётся с опорной записи (первой), можно ввести свой">Темп<input id="glBpm" type="number" min="40" max="240" step="0.1"></label>
+  <label class="glFld" title="Тональность, в которую подгоняются дубли. Сама берётся с опорной записи (первой)">Тон<select id="glKey"></select></label>
+  <span class="glM glMw"><div class="seg glAuto" title="Что подгонять само (в мягких пределах: темп до 12%, тон до 2 полутонов). Выключено - только по кнопке у куска">
     <button data-k="autoT">Темп</button><button data-k="autoK">Тон</button><button data-k="autoC">Строй</button><button data-k="level">Громкость</button></div>
   <label class="glFld" title="Как подгонять доли: по тактам - ровная сетка, живое исполнение внутри такта сохраняется; по каждой доле - строго; один темп - весь кусок одним растяжением">Доли<select id="glSmooth"><option value="bar">по тактам</option><option value="beat">каждую долю</option><option value="off">один темп</option></select></label>
   <label class="glFld" title="К чему прилипает выделение на волне (Alt - без привязки)">Шаг<select id="glSnap"><option value="bar">такт</option><option value="beat">доля</option><option value="half">½ доли</option><option value="off">свободно</option></select></label>
@@ -8724,12 +8777,13 @@ function buildWin(){if($g('#glWin'))return;const w=document.createElement('div')
   <div class="seg glVars" id="glVars" title="Варианты склейки: можно собрать несколько и сравнить. Переключение на ходу, с того же места"></div>
   ${btnIc('glVarCp','copy','','Новый вариант из текущего')}
   ${btnIc('gl8d','orbit','8D','Звук по кругу вокруг головы или влево-вправо, по всей склейке')}
-  ${btnIc('glSave','save','Сохранить','WAV, MP3, проект Reaper или в плейлист пульта')}
+  ${btnIc('glSave','save','Сохранить','WAV, MP3, проект Reaper или в плейлист пульта')}</span>
   ${btnIc('glHelp','help','','Как пользоваться')}
   ${btnIc('glClose','close','','Закрыть (Esc)')}
   </div>
   <div class="glMain">
    <div class="glSrcArea"><div class="glRuler" id="glRulS"><canvas></canvas></div><div class="glSrcs" id="glSrcs"></div><div class="glScroll" id="glScS"><i></i></div></div>
+   <div class="glGuide" id="glGuide"><b>Как работать:</b><span><i>1</i>Добавь дубли: "+ Записи", перетащи файлы или возьми с деки.</span><span><i>2</i>Первая запись - <b>опорная</b>: под её темп и тон подгонятся остальные (свой темп и тон можно ввести сверху, опорную сменить в меню записи ⋯).</span><span><i>3</i>Нажми <b>Дубли в Reaper</b>: все дубли лягут друг под другом, одно и то же место под одним. Склеиваешь мышью в Reaper.</span><small>Щелчок по волне - курсор, ${ic('play')} у записи - слушать оттуда, Пробел - играть/стоп.</small></div>
    <div class="glBar" id="glBar"></div>
    <div class="glResArea"><div class="glResHead" id="glResHead"></div><div class="glResLane"><canvas id="glResCv"></canvas></div><div class="glScroll" id="glScR"><i></i></div></div>
    <div class="glInsp" id="glInsp"></div>
@@ -8739,7 +8793,7 @@ function buildWin(){if($g('#glWin'))return;const w=document.createElement('div')
   <div class="glDrop hidden" id="glDropZ">Отпусти, чтобы добавить записи</div>`;
   document.body.appendChild(w);wire();}
 /* ---------- toolbar ---------- */
-function syncTop(){if(!$g('#glWin')||!PRJ)return;const b=$g('#glBpm');if(document.activeElement!==b)b.value=PRJ.bpm?(+PRJ.bpm).toFixed(1):'';
+function syncTop(){if(!$g('#glWin')||!PRJ)return;const b=$g('#glBpm');if(document.activeElement!==b)b.value=PRJ.bpm?(+PRJ.bpm).toFixed(1):'';{const r=srcList().find(x=>x.bt);b.placeholder=r&&r.bpm?r.bpm.toFixed(1):'';}
   b.classList.toggle('man',!!PRJ.bpmMan);
   const k=$g('#glKey');if(!k.options.length){k.innerHTML='<option value="">авто</option>'+NOTES.map((n,i)=>`<option value="${i}">${n}</option><option value="${i}m">${n}m</option>`).join('');}
   k.value=PRJ.keyMan&&PRJ.key?PRJ.key.pc+(PRJ.key.minor?'m':''):'';
@@ -8749,16 +8803,18 @@ function syncTop(){if(!$g('#glWin')||!PRJ)return;const b=$g('#glBpm');if(documen
   $g('#glVars').innerHTML=PRJ.vars.map((v,i)=>`<button data-v="${i}" class="${i===PRJ.cur?'on':''}" title="${esc(v.name)}: ${v.clips.length} кусков">${i+1}</button>`).join('');
   $g('#gl8d').classList.toggle('on',!!PRJ.fx8.on);}
 function syncTime(){const t=$g('#glTime');if(!t)return;const P=60/(PRJ.bpm||120),bpb=PRJ.bpb||4,b=Math.floor(ST.curR/P);
-  t.textContent=fmtT(ST.curR)+(PRJ.bpm?' · такт '+(Math.floor(b/bpb)+1)+'.'+(b%bpb+1):'');}
+  const s=fmtT(ST.curR)+(PRJ.bpm?' · такт '+(Math.floor(b/bpb)+1)+'.'+(b%bpb+1):'');if(t.textContent!==s)t.textContent=s;}
 /* ---------- drawing ---------- */
 let COL={};
-function readCol(){const cs=getComputedStyle($g('#glWin'));const g=n=>cs.getPropertyValue(n).trim();
+function readCol(){ST.colV=(ST.colV||0)+1;const cs=getComputedStyle($g('#glWin'));const g=n=>cs.getPropertyValue(n).trim();
   COL={txt:g('--txt')||'#eceef4',mut:g('--mut')||'#8a90a2',A:g('--A')||'#29d3ff',B:g('--B')||'#ff3d8b',Y:g('--Y')||'#ffd23f',G:g('--G')||'#3ddc97',R:g('--R')||'#ff4d4d',
     bg:g('--gl-lane')||'#0d0f13',grid:g('--gl-grid')||'rgba(255,255,255,.07)',bar:g('--gl-bar')||'rgba(255,255,255,.22)'};
   // skin values can be gradients - a canvas takes only plain colours
   const t=document.createElement('canvas').getContext('2d'),def={txt:'#eceef4',mut:'#8a90a2',A:'#29d3ff',B:'#ff3d8b',Y:'#ffd23f',G:'#3ddc97',R:'#ff4d4d',bg:'#0d0f13',grid:'rgba(255,255,255,.07)',bar:'rgba(255,255,255,.22)'};
   for(const k in COL){t.fillStyle='#010203';t.fillStyle=COL[k];if(t.fillStyle==='#010203')COL[k]=def[k];}}
-function cvPrep(cv){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1,w=Math.max(1,Math.round(r.width)),h=Math.max(1,Math.round(r.height));
+function cvSz(cv){const d=window.devicePixelRatio||1;return {d,w:Math.max(1,cv.clientWidth),h:Math.max(1,cv.clientHeight)};}
+// redraw a canvas only when what it shows changed (key); returns null when the old picture is still right
+function cvPrep(cv,key){const z=cvSz(cv),d=z.d,w=z.w,h=z.h;if(key!=null){key=w+'|'+h+'|'+d+'|'+(ST.colV||0)+'|'+key;if(cv._k===key)return null;cv._k=key;}
   if(cv.width!==Math.round(w*d)||cv.height!==Math.round(h*d)){cv.width=Math.round(w*d);cv.height=Math.round(h*d);}const c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);return {c,w,h};}
 const cvW=sel=>{const e=$g(sel);return e?e.getBoundingClientRect().width:0;};
 function wave(c,pk,t0,t1,x0,x1,y,hh,col,alpha){if(!pk)return;const per=pk.per,n=pk.mn.length;c.fillStyle=col;c.globalAlpha=alpha==null?0.85:alpha;
@@ -8767,20 +8823,25 @@ function wave(c,pk,t0,t1,x0,x1,y,hh,col,alpha){if(!pk)return;const per=pk.per,n=
     for(let i=Math.max(0,a);i<Math.min(n,b);i++){if(pk.mn[i]<mn)mn=pk.mn[i];if(pk.mx[i]>mx)mx=pk.mx[i];}
     const g=pk.gain||1;c.rect(x0+x,y-mx*hh*g,1,Math.max(1,(mx-mn)*hh*g));}
   c.fill();c.globalAlpha=1;}
-function draw(){if(!ST.open||!PRJ)return;if(!COL.txt||ST.full)readCol();ST.full=false;drawSrcs();drawRes();drawRulers();drawBar();drawInsp();syncTime();scrollBars();}
+function draw(){if(!ST.open||!PRJ)return;if(!COL.txt||ST.full)readCol();ST.full=false;drawSrcs();drawRes();drawRulers();drawBar();drawInsp();
+  {const c=$g('#glSrcs .glLane canvas');ST.cw=c?c.clientWidth:0;ST.cl0=c?c.offsetLeft:0;const r=$g('#glResCv');ST.rw=r?r.clientWidth:0;ST.rl0=r?r.offsetLeft:0;}
+  drawCursors();syncTime();scrollBars();if(!ST.here)syncTop();}
 function srcList(){return [...SRC.values()].sort((a,b)=>(a.ord||0)-(b.ord||0));}
-function laneHTML(s){const f=s.bt?`${s.bpm.toFixed(1)} BPM · ${keyTxt(s.key)} · ${s.cents>=0?'+':''}${Math.round(s.cents)} ц`:esc(s.status||'');
-  return `<div class="glLane" data-id="${s.id}"><div class="glHead" style="--c:${s.color}"><div class="glNm" title="${esc(s.name)}"><i></i>${esc(s.name)}</div><div class="glInfo">${f}</div>
+function laneHTML(s,i){const f=s.bt?`${s.bpm.toFixed(1)} BPM · ${keyTxt(s.key)} · ${s.cents>=0?'+':''}${Math.round(s.cents)} ц`:esc(s.status||'');
+  return `<div class="glLane" data-id="${s.id}"><div class="glHead" style="--c:${s.color}"><div class="glNm" title="${esc(s.name)}"><i></i>${esc(s.name)}</div>${i===0?'<div class="glRef" title="Под эту запись подгоняются остальные">опорная</div>':''}<div class="glInfo">${f}</div>
   <div class="glHb"><button class="sm icon" data-a="play" title="Слушать запись с начала или с места курсора">${ic('play')}</button><button class="sm icon" data-a="menu" title="Настройки записи">${ic('more')||'⋯'}</button></div></div><canvas></canvas></div>`;}
 function renderLanes(){const box=$g('#glSrcs');const list=srcList();
-  if(!list.length){box.innerHTML=`<div class="glEmpty"><b>Брось сюда свои записи</b> (mp3, wav, m4a...) или нажми "+ Записи".<br>Каждая запись ляжет на свою дорожку, пульт сам найдёт темп, доли, тональность и строй.<br>Потом выделяй кусок мышкой и жми <b>В склейку</b> (Enter).</div>`;return;}
+  if(!list.length){box.innerHTML=`<div class="glEmpty"><b>Брось сюда свои записи</b> (mp3, wav, m4a...) или нажми "+ Записи".<br>Каждая запись ляжет на свою дорожку, пульт сам найдёт темп, доли, тональность и строй.<br>Потом нажми <b>Дубли в Reaper</b>: все записи подгонятся по темпу, тону и строю и откроются в Reaper дорожками друг под другом, одно и то же место под одним. Там склеиваешь мышью.<br><span class="glM">Здесь можно собрать набросок: выделяй кусок мышкой и жми <b>В склейку</b> (Enter).</span></div>`;return;}
   const have=[...box.querySelectorAll('.glLane')].map(e=>e.dataset.id).join(',');
-  if(have!==list.map(s=>s.id).join(','))box.innerHTML=list.map(laneHTML).join('');
+  if(have!==list.map(s=>s.id).join(','))box.innerHTML=list.map((s,i)=>laneHTML(s,i)).join('');
   else list.forEach(s=>{const e=box.querySelector(`.glLane[data-id="${s.id}"] .glInfo`);const f=s.bt?`${s.bpm.toFixed(1)} BPM · ${keyTxt(s.key)} · ${s.cents>=0?'+':''}${Math.round(s.cents)} ц`:(s.status||'');if(e&&e.textContent!==f)e.textContent=f;});}
 const sx2t=x=>ST.xs+x/ST.zs,st2x=t=>(t-ST.xs)*ST.zs;
 const rx2t=x=>ST.xr+x/ST.zr,rt2x=t=>(t-ST.xr)*ST.zr;
-function drawSrcs(){renderLanes();{const box=$g('#glSrcs'),n=Math.max(1,SRC.size),hh=Math.max(64,Math.min(150,Math.floor((box.clientHeight-2)/n)));if(ST.laneH!==hh){ST.laneH=hh;box.style.setProperty('--gl-lh',hh+'px');}}
-  for(const s of srcList()){const lane=$g(`#glSrcs .glLane[data-id="${s.id}"]`);if(!lane)continue;const cv=lane.querySelector('canvas');const r=cvPrep(cv),c=r.c,w=r.w,h=r.h;
+function drawSrcs(){renderLanes();{const box=$g('#glSrcs'),n=Math.max(1,SRC.size),hh=Math.max(64,Math.min(ST.here?150:210,Math.floor((box.clientHeight-2)/n)));if(ST.laneH!==hh){ST.laneH=hh;box.style.setProperty('--gl-lh',hh+'px');}}
+  const ucl=curClips();for(const s of srcList()){const lane=$g(`#glSrcs .glLane[data-id="${s.id}"]`);if(!lane)continue;const cv=lane.querySelector('canvas');
+    if(cv._pk!==s.peaks||cv._bt!==s.bt||cv._buf!==s.buf){cv._pk=s.peaks;cv._bt=s.bt;cv._buf=s.buf;cv._k=null;}
+    const sl=ST.sel&&ST.sel.s===s.id?[ST.sel.a,ST.sel.b]:0,mine=ucl.filter(x=>x.s===s.id).map(x=>[x.id===ST.cl?1:0,x.a,x.b]),sm=ST.sim?ST.sim.list.filter(m=>m.s===s.id).map(m=>[m.a,m.b]):0;
+    const r=cvPrep(cv,JSON.stringify([ST.xs,ST.zs,s.color,s.status||'',s.runs?s.runs.length:0,s.peaks&&s.peaks.gain,sl,mine,sm]));if(!r)continue;const c=r.c,w=r.w,h=r.h;
     c.fillStyle=COL.bg;c.fillRect(0,0,w,h);if(!s.buf)continue;const dur=s.buf.duration,t0=ST.xs,t1=ST.xs+w/ST.zs;
     // beat grid
     if(s.bt){for(let i=0;i<s.bt.length;i++){const t=srcT(s,i,'beat');if(t<t0||t>t1)continue;const x=st2x(t),bar=barPos(s,i)===0;
@@ -8796,13 +8857,13 @@ function drawSrcs(){renderLanes();{const box=$g('#glSrcs'),n=Math.max(1,SRC.size
       c.fillStyle=COL.Y;c.globalAlpha=0.18;c.fillRect(x0,0,x1-x0,h);c.globalAlpha=1;c.strokeStyle=COL.Y;c.lineWidth=1.5;c.strokeRect(x0+0.75,0.75,x1-x0-1.5,h-1.5);}
     // similar places shown on the lanes
     if(ST.sim)for(const m of ST.sim.list)if(m.s===s.id){const x0=st2x(srcT(s,m.a,'beat')),x1=st2x(srcT(s,m.b,'beat'));c.strokeStyle=COL.G;c.setLineDash([4,3]);c.strokeRect(x0+0.5,1.5,x1-x0-1,h-3);c.setLineDash([]);}
-    // cursor
-    if(ST.curS&&ST.curS.s===s.id){const x=st2x(ST.curS.t);c.fillStyle=COL.txt;c.fillRect(Math.round(x),0,1.5,h);}
     if(s.status){c.fillStyle=COL.mut;c.font='12px system-ui,sans-serif';c.fillText(s.status,8,16);}}}
-function drawRulers(){const rs=$g('#glRulS canvas');if(rs){const r=cvPrep(rs),c=r.c;c.fillStyle=COL.mut;c.font='10px system-ui,sans-serif';
+function drawRulers(){const rs=$g('#glRulS canvas');if(rs){const r=cvPrep(rs,ST.xs+'|'+ST.zs);if(!r)return;const c=r.c;c.fillStyle=COL.mut;c.font='10px system-ui,sans-serif';
   const step=[0.5,1,2,5,10,15,30,60].find(s=>s*ST.zs>=70)||120;for(let t=Math.ceil(ST.xs/step)*step;t<ST.xs+r.w/ST.zs;t+=step){const x=st2x(t);c.fillRect(Math.round(x),r.h-5,1,5);c.fillText(fmtT(t).replace(/\.0$/,''),x+3,r.h-6);}}}
 function clipAtX(x){const m=ST.mix;if(!m)return null;const t=rx2t(x);return m.marks.find(k=>t>=k.t0&&t<k.t1)||null;}
-function drawRes(){const cv=$g('#glResCv');if(!cv)return;const r=cvPrep(cv),c=r.c,w=r.w,h=r.h,m=ST.mix,cl=curClips();
+function drawRes(){const cv=$g('#glResCv');if(!cv)return;const m=ST.mix,cl=curClips();drawResHead(m,cl);
+  if(cv._m!==m){cv._m=m;cv._k=null;}const dg=ST.drag;
+  const r=cvPrep(cv,JSON.stringify([ST.xr,ST.zr,ST.cl,ST.jn,ST.busy,PRJ.bpm,PRJ.bpb,ST.ver,cl.map(x=>[x.id,x.s,x.j&&x.j.tr?1:0]),dg&&dg.ins!=null?dg.insX:null]));if(!r)return;const c=r.c,w=r.w,h=r.h;
   c.fillStyle=COL.bg;c.fillRect(0,0,w,h);const top=16;
   // bar grid of the glue
   if(PRJ.bpm){const P=60/PRJ.bpm,bpb=PRJ.bpb||4;const b0=Math.floor(ST.xr/P),b1=Math.ceil((ST.xr+w/ST.zr)/P);c.font='10px system-ui,sans-serif';
@@ -8820,14 +8881,13 @@ function drawRes(){const cv=$g('#glResCv');if(!cv)return;const r=cvPrep(cv),c=r.
       c.fillStyle=on?COL.Y:tr?COL.G:COL.txt;c.globalAlpha=on?1:0.8;c.fillRect(Math.round(x),top,1,h-top);c.beginPath();c.moveTo(x,top-1);c.lineTo(x+6,top-8);c.lineTo(x,top-15);c.lineTo(x-6,top-8);c.closePath();c.fill();c.globalAlpha=1;}}
   // a clip being dragged in: insertion line
   const d=ST.drag;if(d&&d.ins!=null){const x=d.insX;c.fillStyle=COL.Y;c.fillRect(Math.round(x)-1,top,3,h-top);}
-  // cursor
-  const x=rt2x(ST.curR);c.fillStyle=COL.Y;c.fillRect(Math.round(x),0,1.5,h);
-  const head=$g('#glResHead');if(head){const n=cl.length,T=m?(m.len/m.sr-PAD):0;
-    head.innerHTML=`<b>Склейка</b><span>${esc(PRJ.vars[PRJ.cur].name)} · ${n} ${n%10===1&&n%100!==11?'кусок':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'куска':'кусков'}${PRJ.bpm?' · '+(+PRJ.bpm).toFixed(1)+' BPM':''}${PRJ.key?' · '+keyTxt(PRJ.key):''}${T>0?' · '+fmtT(T):''}</span>${ST.busy?`<span class="glBusy">готовлю ${ST.busy} ${ST.busy===1?'кусок':'куска'}...</span>`:''}`;}}
+}
+function drawResHead(m,cl){const head=$g('#glResHead');if(head){const n=cl.length,T=m?(m.len/m.sr-PAD):0;
+    const html=`<b>Склейка</b><span>${esc(PRJ.vars[PRJ.cur].name)} · ${n} ${n%10===1&&n%100!==11?'кусок':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'куска':'кусков'}${PRJ.bpm?' · '+(+PRJ.bpm).toFixed(1)+' BPM':''}${PRJ.key?' · '+keyTxt(PRJ.key):''}${T>0?' · '+fmtT(T):''}</span>${ST.busy?`<span class="glBusy">готовлю ${ST.busy} ${ST.busy===1?'кусок':'куска'}...</span>`:''}`;if(head._h!==html){head._h=html;head.innerHTML=html;}}}
 function scrollBars(){const sS=$g('#glScS'),sR=$g('#glScR');if(!sS)return;
-  const wS=cvW('#glSrcs .glLane canvas')||cvW('#glRulS canvas')||1,maxS=Math.max(1,...srcList().map(s=>s.buf?s.buf.duration:0)),visS=wS/ST.zs;
-  const wR=cvW('#glResCv')||1,maxR=Math.max(visS*0,ST.mix?ST.mix.len/ST.mix.sr:1),visR=wR/ST.zr;
-  const set=(el,x,vis,max)=>{const t=Math.max(max,x+vis),i=el.firstElementChild;i.style.left=(x/t*100)+'%';i.style.width=Math.max(3,vis/t*100)+'%';el.classList.toggle('dim',vis>=max&&x<=0);};
+  const wS=ST.cw||cvW('#glRulS canvas')||1,maxS=Math.max(1,...srcList().map(s=>s.buf?s.buf.duration:0)),visS=wS/ST.zs;
+  const wR=ST.rw||1,maxR=Math.max(visS*0,ST.mix?ST.mix.len/ST.mix.sr:1),visR=wR/ST.zr;
+  const set=(el,x,vis,max)=>{const t=Math.max(max,x+vis),i=el.firstElementChild,l=(x/t*100).toFixed(2)+'%',ww=Math.max(3,vis/t*100).toFixed(2)+'%';if(i.style.left!==l)i.style.left=l;if(i.style.width!==ww)i.style.width=ww;el.classList.toggle('dim',vis>=max&&x<=0);};
   set(sS,ST.xs,visS,maxS);set(sR,ST.xr,visR,maxR);}
 /* ---------- the bar between takes and glue ---------- */
 function selInfo(){const s=ST.sel&&SRC.get(ST.sel.s);if(!s)return null;const a=Math.min(ST.sel.a,ST.sel.b),b=Math.max(ST.sel.a,ST.sel.b),bpb=s.bpb||4;
@@ -8844,7 +8904,7 @@ function drawInsp(){const el=$g('#glInsp');if(!el)return;const k=JSON.stringify(
   if(ST.sim&&ST.sim.list){el.innerHTML=simHTML();return;}
   if(ST.jn){const i=clipIdx(ST.jn);if(i>0){el.innerHTML=jointHTML(i);return;}}
   if(ST.cl){const i=clipIdx(ST.cl);if(i>=0){el.innerHTML=clipHTML(i);return;}}
-  const n=SRC.size;el.innerHTML=`<div class="glIt"><b>${n?'Как склеивать':'Начни с записей'}</b><span>${n?'1) Выдели кусок на записи и нажми <b>В склейку</b> (Enter). 2) Добавь следующий кусок из другой записи - он сам встанет в темп, тон и строй первого. 3) Щёлкни ромбик стыка, чтобы послушать его (J), поменять длину перехода или поставить заготовку. 4) Щёлкни кусок в склейке: Del - убрать, S - разрезать по курсору, края тянутся мышкой. Ctrl+Z - отменить.':'Нажми "+ Записи" или перетащи файлы в окно. Подойдут черновики одной мелодии в разных вариантах.'}</span></div>`;}
+  const n=SRC.size;el.innerHTML=`<div class="glIt"><b>${n?'Как склеивать':'Начни с записей'}</b><span>${n?'Быстрее всего: нажми <b>Дубли в Reaper</b> - все записи подгонятся и откроются в Reaper лейнами друг под другом, там склеиваешь мышью. Или здесь: 1) Выдели кусок на записи и нажми <b>В склейку</b> (Enter). 2) Добавь следующий кусок из другой записи - он сам встанет в темп, тон и строй первого. 3) Щёлкни ромбик стыка, чтобы послушать его (J), поменять длину перехода или поставить заготовку. 4) Щёлкни кусок в склейке: Del - убрать, S - разрезать по курсору, края тянутся мышкой. Ctrl+Z - отменить.':'Нажми "+ Записи" или перетащи файлы в окно. Подойдут черновики одной мелодии в разных вариантах.'}</span></div>`;}
 const fmtPct=r=>(r>=1?'+':'')+((r-1)*100).toFixed(1)+'%';
 function clipHTML(i){const c=curClips()[i],s=SRC.get(c.s);if(!s)return '';const f=fitOf(c),bpb=s.bpb||4,lb=localBpm(s,c.a,c.b);
   const tFit=c.fit==='off'?'off':c.fit==='on'?'on':'auto';
@@ -8895,7 +8955,7 @@ async function addBytes(name,bytes){const s={id:uid(),name,bytes,ord:++ordN,colo
   try{s.buf=await decode(bytes.slice(0));}catch(e){SRC.delete(s.id);toast('Не читается: '+name);UI.dirty(true);return;}
   s.peaks=peaksOf(s.buf,200);s.status='разбор...';fitView();UI.dirty(true);
   try{await analyzeSrc(s);}catch(e){s.status='не разобралась';UI.dirty(true);}
-  if(!ST.sel&&!curClips().length)toast('Запись готова: выдели кусок и нажми "В склейку"');}
+  if(!ST.sel&&!curClips().length)toast(SRC.size>1?'Записи готовы: нажми "Дубли в Reaper" или выдели кусок и нажми "В склейку"':'Запись готова: добавь остальные дубли');}
 async function loadAll(){ST.ready=true;let p=null;try{const r=await gTx('prj','readonly',st=>st.get('cur'));p=r&&r.p;}catch(e){}
   PRJ=Object.assign(newPrj(),p||{});if(!PRJ.vars||!PRJ.vars.length)PRJ.vars=[{name:'Вариант 1',clips:[]}];PRJ.fx8=Object.assign(newPrj().fx8,PRJ.fx8||{});
   let list=[];try{list=await gTx('src','readonly',st=>st.getAll())||[];}catch(e){}
@@ -9009,12 +9069,13 @@ function pop8d(a){const o=PRJ.fx8;pop(`<b>8D по всей склейке</b><la
   <small>Лучше слушать в наушниках. Для одного стыка есть заготовка "8D-переход" у ромбика стыка.</small>`,a);}
 function popSave(a){pop(`<b>Сохранить склейку</b>
   <button class="sm" data-x="wav">${ic('save')}WAV 24 бит (без потерь)</button><button class="sm" data-x="mp3">${ic('save')}MP3 320 кбит/с</button>
-  <button class="sm" data-x="rpp">${ic('save')}Проект Reaper (каждый кусок отдельно)</button><button class="sm" data-x="pult">${ic('arrowR')}В плейлист пульта (A)</button>
+  <button class="sm" data-x="lanes">${ic('arrowR')}Дубли в Reaper (все записи дорожками)</button><button class="sm" data-x="rpp">${ic('save')}Проект Reaper (каждый кусок отдельно)</button><button class="sm" data-x="pult">${ic('arrowR')}В плейлист пульта (A)</button>
   <small>Громкость выставляется сама: пик не выше -1 дБ.</small>`,a);}
 function popSrc(s,a){pop(`<b>${esc(s.name)}</b><small>${s.bt?`${s.bpm.toFixed(2)} BPM, ${s.bpb}/4, ${keyTxt(s.key)}, строй ${s.cents>=0?'+':''}${s.cents.toFixed(1)} ц, ${s.lufs.toFixed(1)} LUFS`:''}</small>
   <div class="glRow"><span>Начало такта</span><button class="sm" data-m="sh" data-d="-1">${ic('chevL')}</button><button class="sm" data-m="sh" data-d="1">${ic('chevR')}</button></div>
   <div class="glRow"><span>Темп</span><button class="sm ${s.mul===0.5?'on':''}" data-m="mul" data-v="0.5">½</button><button class="sm ${!s.mul?'on':''}" data-m="mul" data-v="0">авто</button><button class="sm ${s.mul===2?'on':''}" data-m="mul" data-v="2">×2</button></div>
   <div class="glRow"><span>Громкость</span><input type="range" min="-12" max="12" step="0.5" value="${s.g||0}" data-m="g"><b class="glV">${(s.g||0)>0?'+':''}${(+(s.g||0)).toFixed(1)}</b></div>
+  <button class="sm" data-m="ref">Сделать опорной (под неё подгонять)</button>
   <button class="sm" data-m="del">Убрать запись из окна</button>`,a);ST.popSrc=s.id;}
 function popHelp(a){pop(`<b>Как пользоваться</b><small>
   <b>Записи</b>: "+ Записи" или перетащить файлы в окно. Пульт сам найдёт темп по живым долям, такты, аккорды, тональность и строй (центы).<br>
@@ -9037,7 +9098,7 @@ function wire(){const W=$g('#glWin');
   $g('#glUndo').onclick=undo;$g('#glRedo').onclick=redo;
   $g('#glVars').onclick=e=>{const b=e.target.closest('button');if(!b)return;setVar(+b.dataset.v);};
   $g('#glVarCp').onclick=()=>{if(PRJ.vars.length>=6){toast('Вариантов уже 6');return;}pushHist();const v=JSON.parse(JSON.stringify(PRJ.vars[PRJ.cur]));v.name='Вариант '+(PRJ.vars.length+1);v.clips.forEach(c=>c.id=uid());PRJ.vars.push(v);setVar(PRJ.vars.length-1);toast('Новый вариант: копия текущего. Меняй и сравнивай (кнопки 1-6)');};
-  $g('#gl8d').onclick=e=>pop8d(e.currentTarget);$g('#glSave').onclick=e=>popSave(e.currentTarget);$g('#glHelp').onclick=e=>popHelp(e.currentTarget);$g('#glClose').onclick=()=>setOpen(false);
+  $g('#glLanes').onclick=()=>exportLanes();$g('#gl8d').onclick=e=>pop8d(e.currentTarget);$g('#glSave').onclick=e=>popSave(e.currentTarget);$g('#glHelp').onclick=e=>popHelp(e.currentTarget);$g('#glClose').onclick=()=>setOpen(false);
   const srcs=$g('#glSrcs');srcs.addEventListener('pointerdown',onSrcDown);
   srcs.addEventListener('dblclick',e=>{const s=laneOf(e);if(!s||!s.bt||e.target.tagName!=='CANVAS')return;const r=e.target.getBoundingClientRect(),b=srcB(s,sx2t(e.clientX-r.left));let a=Math.floor(b);while(a>0&&barPos(s,a)!==0)a--;let z=a+1;while(z<s.bt.length&&barPos(s,z)!==0)z++;ST.sel={s:s.id,a,b:z};UI.dirty();});
   srcs.addEventListener('click',e=>{const b=e.target.closest('button[data-a]');if(!b)return;const s=SRC.get(b.closest('.glLane').dataset.id);if(!s||!s.buf)return;
@@ -9075,10 +9136,11 @@ function wire(){const W=$g('#glWin');
     if(t.dataset.c==='g'||t.dataset.j){savePrj();t._h=0;ST.ver++;remix();}});
   const P=$g('#glPop');
   P.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
-    if(b.dataset.x){popClose();doExport(b.dataset.x);return;}
+    if(b.dataset.x){popClose();if(b.dataset.x==='lanes')exportLanes();else doExport(b.dataset.x);return;}
     if(b.closest('[data-8]')||b.dataset[8]){const k=(b.closest('[data-8]')||b).dataset[8];if(k==='mode'){PRJ.fx8.mode=b.dataset.v;PRJ.fx8.on=true;changed();pop8d($g('#gl8d'));}return;}
     if(b.dataset.m){const s=SRC.get(ST.popSrc);if(!s)return;const k=b.dataset.m;
       if(k==='sh'){s.sh=(s.sh||0)+(+b.dataset.d);saveSrc(s);changed();}
+      else if(k==='ref'){s.ord=Math.min(...[...SRC.values()].map(x=>x.ord||0))-1;saveSrc(s);if(!PRJ.bpmMan&&!curClips().length){PRJ.bpm=0;if(!PRJ.keyMan)PRJ.key=null;savePrj();syncTop();}popClose();UI.dirty(true);toast('Опорная: '+s.name);}
       else if(k==='mul'){s.mul=+b.dataset.v||0;saveSrc(s);changed();popSrc(s,$g(`.glLane[data-id="${s.id}"] [data-a=menu]`));}
       else if(k==='del'){const n=[].concat(...PRJ.vars.map(v=>v.clips)).filter(c=>c.s===s.id).length;if(n){toast('Эта запись есть в склейке ('+n+' кусков). Сначала убери их.');return;}
         SRC.delete(s.id);delSrc(s.id);popClose();if(ST.sel&&ST.sel.s===s.id)ST.sel=null;UI.dirty(true);}}});
@@ -9103,7 +9165,7 @@ function onKey(e){if(!ST.open)return;const t=e.target,typing=t&&(/^(INPUT|SELECT
   e.stopImmediatePropagation();if(e.type!=='keydown')return;const k=e.key,ctl=e.ctrlKey||e.metaKey,code=e.code;
   const done=()=>e.preventDefault();
   if(k==='Escape'){done();if(!$g('#glPop').classList.contains('hidden'))popClose();else if(ST.sim){ST.sim=null;UI.dirty();}else if(ST.sel||ST.cl||ST.jn){ST.sel=null;ST.cl=null;ST.jn=null;UI.dirty();}else setOpen(false);return;}
-  if(code==='Space'){done();if(ST.play)stopPlay();else playRes();return;}
+  if(code==='Space'){done();if(ST.play)stopPlay();else if(!ST.here){const s=(ST.curS&&SRC.get(ST.curS.s))||srcList()[0];if(s&&s.buf)playSrc(s,ST.curS&&ST.curS.s===s.id?ST.curS.t:0);}else playRes();return;}
   if(ctl&&code==='KeyZ'){done();if(e.shiftKey)redo();else undo();return;}if(ctl&&code==='KeyY'){done();redo();return;}
   if(ctl&&code==='KeyD'){done();if(ST.cl)dupClip(ST.cl);return;}
   if(k==='Enter'){done();addSel();return;}
@@ -9116,7 +9178,10 @@ function onKey(e){if(!ST.open)return;const t=e.target,typing=t&&(/^(INPUT|SELECT
   if(k==='Home'){done();ST.curR=0;ST.xr=0;UI.dirty();}}
 ['keydown','keyup','keypress'].forEach(t=>window.addEventListener(t,onKey,true));
 /* ---------- open / close ---------- */
-function setOpen(o){buildWin();ST.open=o;const w=$g('#glWin');w.classList.toggle('hidden',!o);document.body.classList.toggle('glOpen',o);const b=$g('#glBtn');if(b)b.classList.toggle('on',o);
+function setHere(on){ST.here=!!on;try{localStorage.setItem('dj-gl-here',on?'1':'0');}catch(e){}const w=$g('#glWin');if(!w)return;w.classList.toggle('glR',!on);
+  const b=$g('#glMode');if(b){b.classList.toggle('on',!!on);b.querySelector('.glMl').textContent=on?'Собираю здесь':'Собрать здесь';b.title=on?'Спрятать монтаж в пульте (главное - Дубли в Reaper)':'Простой монтаж прямо в пульте, без Reaper: для быстрых набросков';}
+  if(!on&&ST.play&&ST.play.kind==='res')stopPlay();ST.laneH=0;requestAnimationFrame(()=>{fitView&&fitView();UI.dirty(true);});}
+function setOpen(o){const first=!$g('#glWin');buildWin();if(first){let h=false;try{h=localStorage.getItem('dj-gl-here')==='1';}catch(e){}setHere(h);$g('#glMode').onclick=()=>setHere(!ST.here);}ST.open=o;const w=$g('#glWin');w.classList.toggle('hidden',!o);document.body.classList.toggle('glOpen',o);window.DJ_COVER=o;if(!o&&window.decks)decks.forEach(d=>d.dirty=true);const b=$g('#glBtn');if(b)b.classList.toggle('on',o);
   if(o){COL={};if(!ST.ready)loadAll().catch(e=>{console.error(e);toast('Склейка: не открылось хранилище');});else{syncTop();UI.dirty(true);}requestAnimationFrame(()=>{fitView();UI.dirty(true);});}
   else{stopPlay();popClose();}}
 
@@ -9179,6 +9244,99 @@ async function exportRpp(nm){const m=await finalMix(true),sr=m.sr,G=m.gain,bpm=P
     const rp=await dj.reaperWrite({dir,name:nm+'.rpp',data:new TextEncoder().encode(rpp)});const o=await dj.reaperOpen({rpp:rp});toast(o&&o.ok?'Открываю в Reaper. Папка: '+dir:'Проект сохранён: '+dir);return;}
   const z=typeof REAPER!=='undefined'&&REAPER.zip;if(!z)throw new Error('нет упаковщика');
   await saveBlob(nm+' - Reaper.zip',z([...files,{name:nm+'.rpp',data:rpp}]),'zip');toast('Распакуй архив и открой "'+nm+'.rpp" двойным щелчком');}
+
+/* ---------- "Дубли в Reaper": every take fitted (tempo by beats, key, tuning, level) and laid in fixed lanes of one track ----------
+   lane 0 = empty comp lane "Итог" (plays), lanes 1..N = takes, the same musical place under each other. Swipe-comping is done in Reaper. */
+const LANE_LUA=`-- DJ-пульт: разложить дубли по дорожкам (лейнам) одного трека.
+-- Нужно, только если Reaper открыл проект без лейнов. Выделите трек "Гитара: дубли" и запустите.
+local tr = reaper.GetSelectedTrack(0, 0)
+if not tr then
+  for i = 0, reaper.CountTracks(0) - 1 do
+    local t = reaper.GetTrack(0, i); local _, n = reaper.GetTrackName(t)
+    if n:find("дубли") then tr = t; break end
+  end
+end
+if not tr then reaper.ShowMessageBox("Выделите трек с дублями", "DJ-пульт", 0) return end
+reaper.Undo_BeginBlock()
+local items = {}
+for i = 0, reaper.CountTrackMediaItems(tr) - 1 do items[#items + 1] = reaper.GetTrackMediaItem(tr, i) end
+reaper.SetMediaTrackInfo_Value(tr, "I_FREEMODE", 2)
+reaper.SetMediaTrackInfo_Value(tr, "I_NUMFIXEDLANES", #items + 1)
+pcall(reaper.GetSetMediaTrackInfo_String, tr, "P_LANENAME:0", "Итог", true)
+for i, it in ipairs(items) do
+  local tk = reaper.GetActiveTake(it)
+  local nm = tk and reaper.GetTakeName(tk) or ""
+  local k = tonumber(nm:match("^(%d+)%.")) or i
+  reaper.SetMediaItemInfo_Value(it, "I_FIXEDLANE", k)
+  pcall(reaper.GetSetMediaTrackInfo_String, tr, "P_LANENAME:" .. k, nm, true)
+end
+pcall(reaper.SetMediaTrackInfo_Value, tr, "C_LANEPLAYS:0", 1)
+reaper.Undo_EndBlock("DJ-пульт: дубли по дорожкам", -1)
+reaper.UpdateArrange()
+`;
+function firstDown(s){const b=s.buf,sr=b.sampleRate,d=b.getChannelData(0),w=Math.round(sr*0.05),rm=[];
+  for(let i=0;i+w<=d.length;i+=w){let e=0;for(let j=i;j<i+w;j++)e+=d[j]*d[j];rm.push(Math.sqrt(e/w));}
+  const mx=Math.max(1e-9,...rm),on=(rm.findIndex(v=>v>mx*0.15)*w)/sr;
+  for(let i=0;i<s.bt.length;i++)if(srcT(s,i,'beat')>=on-0.05&&barPos(s,i)===0)return i;return 0;}
+// the same music under each other: compare beat chroma of the whole takes on the project beat grid, bar lines kept together.
+// Returns where x's first downbeat goes, in project beats from the reference's first downbeat.
+function alignTakes(x,r,bpb){const X=centered(x.s),Y=centered(r.s),nx=X.length/12,ny=Y.length/12,mx=x.f.m,my=r.f.m;
+  const rot=x.s.key&&r.s.key?((relPc(r.s.key)-relPc(x.s.key))%12+12)%12:0;
+  const kx=Math.floor(nx*mx),ky=Math.floor(ny*my),ix=k=>Math.min(nx-1,Math.floor(k/mx))*12,iy=k=>Math.min(ny-1,Math.floor(k/my))*12;
+  const ax=x.i0*mx,ay=r.i0*my,minOv=Math.min(32,Math.floor(Math.min(kx,ky)*0.5));let best=null;
+  const full=Math.min(kx,ky);
+  for(let d=-kx;d<=ky;d++){const k0=Math.max(0,-d),k1=Math.min(kx,ky-d);if(k1-k0<minOv)continue;let tot=0;
+    for(let k=k0;k<k1;k++){const a=ix(k),b=iy(k+d);let v=0;for(let z=0;z<12;z++)v+=X[a+z]*Y[b+(z+rot)%12];tot+=v;}
+    const mean=tot/(k1-k0),ph=((((ax+d-ay)%bpb)+bpb)%bpb)<1e-6?0.02:0,sc=(mean+ph)*(k1-k0)/full;
+    if(!best||sc>best.w)best={w:sc,score:mean,beats:ax+d-ay};}
+  return best;}
+async function exportLanes(){
+  if(expBusy)return;const takes=[...SRC.values()].filter(s=>s.bt&&s.buf).sort((a,b)=>(a.ord||0)-(b.ord||0));
+  if(!takes.length){toast('Сначала добавь записи: кнопка "+ Записи" или перетащи файлы в окно');return;}
+  if(ST.busy||[...SRC.values()].some(s=>!s.bt)){toast('Подожди: пульт ещё разбирает записи');return;}
+  expBusy=true;
+  try{
+    const cl=curClips(),ref=(cl.length&&SRC.get(cl[0].s))||takes[0],sr=ctx.sampleRate;
+    if(!PRJ.bpm){PRJ.bpm=Math.round(ref.bpm*100)/100;if(!PRJ.keyMan)PRJ.key=ref.key?{pc:ref.key.pc,minor:!!ref.key.minor}:null;PRJ.tune=ref.cents||0;PRJ.bpb=ref.bpb||4;savePrj();syncTop();}
+    const bpm=PRJ.bpm,P=60/bpm,bpb=PRJ.bpb||4,bar=bpb*P;
+    const lv=takes.map(s=>s.lufs).filter(isFinite).sort((a,b)=>a-b),tg=lv.length?lv[lv.length>>1]:-18;
+    // where take beat 0 lands (seconds), and its layout for rendering
+    const L=takes.map(s=>{const c={id:'lane-'+s.id,s:s.id,a:0,b:s.bt.length-1};const l=layout([c])[0];return {s,l,f:l.f,i0:firstDown(s)};});
+    const dT=x=>x.f.tempo?x.i0*x.f.m*P:srcT(x.s,x.i0,'beat')-srcT(x.s,0,'beat');   // beat 0 -> its first downbeat, in project seconds
+    const R0=L.find(x=>x.s===ref),Bref=R0.i0;
+    for(const x of L){let t=null;x.match=null;
+      if(x!==R0&&R0.f.tempo&&x.f.tempo){const al=alignTakes(x,R0,bpb);if(al&&al.w>0.15){t=al.beats*P;x.match=al.score;}}
+      if(t==null)t=0;                                       // no match: its first downbeat on the reference's first downbeat
+      x.t0=t-dT(x);}                                        // seconds of beat 0, relative to the reference's first downbeat
+    const lo=Math.min(...L.map(x=>x.t0-HAND)),shift=Math.ceil(Math.max(0,-lo)/bar)*bar+bar;
+    toast('Подгоняю '+L.length+' '+(L.length===1?'запись':L.length<5?'записи':'записей')+' под '+bpm.toFixed(2)+' BPM...');
+    const files=[],items=[],N=L.length;let k=0;
+    for(const x of L){k++;const r=await renderClip(x.l);let pk=1e-9;for(const a of r.chs)for(let i=0;i<a.length;i++){const v=Math.abs(a[i]);if(v>pk)pk=v;}
+      const fg=Math.min(1,0.97/pk),vol=dbg(lvlOf(x.s,tg))/fg,file=String(k).padStart(2,'0')+' '+fnm(x.s.name)+'.wav';
+      files.push({name:file,data:wavOut(r.chs.map(a=>scaled(a,fg)),sr)});
+      const f=x.f,tag=[f.tempo?'':'темп не тронут',f.semis?(f.semis>0?'+':'')+f.semis+' пт':'',x.match==null&&x!==R0?'место не найдено':''].filter(Boolean).join(', ');
+      x.name=k+'. '+x.s.name+(tag?' ('+tag+')':'');
+      items.push({pos:shift+x.t0-HAND,len:r.chs[0].length/sr,vol,file,name:x.name,lane:k});
+      toast('Готово '+k+' из '+N);}
+    const f6=v=>(Math.round(v*1e6)/1e6).toString(),q=s=>'"'+String(s).replace(/"/g,"'")+'"',h=1/(N+1);
+    const out=[`<REAPER_PROJECT 0.1 "7.0/win64" ${Math.floor(Date.now()/1000)}`,'  RIPPLE 0','  AUTOXFADE 129',`  TEMPO ${f6(bpm)} ${bpb} 4`,'  CURSOR 0','  ZOOM 20 0 0','  GRID 3199 8 1 8 1 0 0 0',
+      '  <NOTES 0 2','    |Склейка дублей из DJ-пульта','    |Темп '+bpm.toFixed(2)+' BPM, тональность '+keyTxt(PRJ.key)+'. Все дубли подогнаны по темпу (по долям), тону, строю и громкости.',
+      '    |Дубли лежат лейнами одного трека, одно и то же место друг под другом. Верхний лейн "Итог" - туда собирается склейка:',
+      '    |проведите мышью по нужному куску в любом дубле, он попадёт в "Итог". Послушать дубль целиком - кнопка у его лейна.',
+      '    |Если лейнов не видно: выделите трек и запустите скрипт "DJ-пульт - дубли по дорожкам.lua" из этой папки.','  >',
+      `  MARKER 1 ${f6(shift)} ${q('Начало')} 0 0 1 R 0`,
+      '  <TRACK',`    NAME ${q('Гитара: дубли')}`,'    PEAKCOL 20622079','    BEAT -1','    AUTOMODE 0','    VOLPAN 1 0 -1 -1 1','    MUTESOLO 0 0 0','    IPHASE 0','    ISBUS 0 0',
+      '    FIXEDLANES 8 0 0 0 0','    LANESOLO 1 0 0 0 0 0 0 0','    LANEREC -1 0 -1',`    LANENAME ${[q('Итог'),...L.map(x=>q(x.name))].join(' ')}`,`    ITEMLANES ${N+1}`,'    NCHAN 2','    MAINSEND 1 0'];
+    for(const it of items)out.push('    <ITEM',`      POSITION ${f6(it.pos)}`,`      LENGTH ${f6(it.len)}`,'      LOOP 0','      FADEIN 1 0.01 0 1 0 0 0','      FADEOUT 1 0.01 0 1 0 0 0',`      NAME ${q(it.name)}`,
+      `      VOLPAN ${f6(it.vol)} 0 1 -1`,'      SOFFS 0',`      YPOS ${f6(it.lane*h)} ${f6(h)}`,'      <SOURCE WAVE',`        FILE ${q(it.file)}`,'      >','    >');
+    out.push('  >','>');const rpp=out.join('\n'),nm=fnm('Дубли '+stamp()),lua={name:'DJ-пульт - дубли по дорожкам.lua',data:new TextEncoder().encode(LANE_LUA)};
+    const dj=window.djpult;
+    if(dj&&dj.isApp&&dj.reaperBegin){const r=await dj.reaperBegin(nm),dir=r.dir;for(const f of [...files,lua])await dj.reaperWrite({dir,name:f.name,data:f.data});
+      const rp=await dj.reaperWrite({dir,name:nm+'.rpp',data:new TextEncoder().encode(rpp)});const o=await dj.reaperOpen({rpp:rp});toast(o&&o.ok?'Открываю в Reaper. Папка: '+dir:'Проект сохранён: '+dir);return;}
+    const z=typeof REAPER!=='undefined'&&REAPER.zip;if(!z)throw new Error('нет упаковщика');
+    await saveBlob(nm+' - Reaper.zip',z([...files,lua,{name:nm+'.rpp',data:rpp}]),'zip');toast('Распакуй архив и открой "'+nm+'.rpp" двойным щелчком');}
+  catch(e){console.warn('glue lanes',e);toast('Не получилось: '+(e&&e.message||e));}
+  finally{expBusy=false;}}
 
 const MP3D=[0,-1,-1,-1,-1,-1,-1,-2,-2,-2,-2,-3,-3,-4,-4,-5,-5,-6,-7,-7,-8,-9,-10,-11,-13,-14,-16,-17,-19,-21,-24,-26,-29,-31,-35,-38,-41,-45,-49,-53,-58,-63,-68,-73,-79,-85,-91,-97,-104,-111,-117,-125,-132,-139,-147,-154,-161,-169,-176,-183,-190,-196,-202,-208,213,218,222,225,227,228,228,227,224,221,215,208,200,189,177,163,146,127,106,83,57,29,-2,-36,-72,-111,-153,-197,-244,-294,-347,-401,-459,-519,-581,-645,-711,-779,-848,-919,-991,-1064,-1137,-1210,-1283,-1356,-1428,-1498,-1567,-1634,-1698,-1759,-1817,-1870,-1919,-1962,-2001,-2032,-2057,-2075,-2085,-2087,-2080,-2063,2037,2000,1952,1893,1822,1739,1644,1535,1414,1280,1131,970,794,605,402,185,-45,-288,-545,-814,-1095,-1388,-1692,-2006,-2330,-2663,-3004,-3351,-3705,-4063,-4425,-4788,-5153,-5517,-5879,-6237,-6589,-6935,-7271,-7597,-7910,-8209,-8491,-8755,-8998,-9219,-9416,-9585,-9727,-9838,-9916,-9959,-9966,-9935,-9863,-9750,-9592,-9389,-9139,-8840,-8492,-8092,-7640,-7134,6574,5959,5288,4561,3776,2935,2037,1082,70,-998,-2122,-3300,-4533,-5818,-7154,-8540,-9975,-11455,-12980,-14548,-16155,-17799,-19478,-21189,-22929,-24694,-26482,-28289,-30112,-31947,-33791,-35640,-37489,-39336,-41176,-43006,-44821,-46617,-48390,-50137,-51853,-53534,-55178,-56778,-58333,-59838,-61289,-62684,-64019,-65290,-66494,-67629,-68692,-69679,-70590,-71420,-72169,-72835,-73415,-73908,-74313,-74630,-74856,-74992,75038,74992,74856,74630,74313,73908,73415,72835,72169,71420,70590,69679,68692,67629,66494,65290,64019,62684,61289,59838,58333,56778,55178,53534,51853,50137,48390,46617,44821,43006,41176,39336,37489,35640,33791,31947,30112,28289,26482,24694,22929,21189,19478,17799,16155,14548,12980,11455,9975,8540,7154,5818,4533,3300,2122,998,-70,-1082,-2037,-2935,-3776,-4561,-5288,-5959,6574,7134,7640,8092,8492,8840,9139,9389,9592,9750,9863,9935,9966,9959,9916,9838,9727,9585,9416,9219,8998,8755,8491,8209,7910,7597,7271,6935,6589,6237,5879,5517,5153,4788,4425,4063,3705,3351,3004,2663,2330,2006,1692,1388,1095,814,545,288,45,-185,-402,-605,-794,-970,-1131,-1280,-1414,-1535,-1644,-1739,-1822,-1893,-1952,-2000,2037,2063,2080,2087,2085,2075,2057,2032,2001,1962,1919,1870,1817,1759,1698,1634,1567,1498,1428,1356,1283,1210,1137,1064,991,919,848,779,711,645,581,519,459,401,347,294,244,197,153,111,72,36,2,-29,-57,-83,-106,-127,-146,-163,-177,-189,-200,-208,-215,-221,-224,-227,-228,-228,-227,-225,-222,-218,213,208,202,196,190,183,176,169,161,154,147,139,132,125,117,111,104,97,91,85,79,73,68,63,58,53,49,45,41,38,35,31,29,26,24,21,19,17,16,14,13,11,10,9,8,7,7,6,5,5,4,4,3,3,2,2,2,2,1,1,1,1,1,1];
 const MP3H={1:{n:2,l:"1323",c:[1,1,1,0]},2:{n:3,l:"136335556",c:[1,2,1,3,1,1,3,2,0]},3:{n:3,l:"226325556",c:[3,2,1,1,1,1,3,2,0]},5:{n:4,l:"1367336766787678",c:[1,2,6,5,3,1,4,4,7,5,7,1,6,1,1,0]},6:{n:4,l:"3357324544566567",c:[7,3,5,1,6,2,3,2,5,4,4,1,3,3,2,0]},7:{n:6,l:"13688934677865788977899977899:889:::",c:[1,2,10,19,16,10,3,3,7,10,5,3,11,4,13,17,8,4,12,11,18,15,11,2,7,6,9,14,3,1,6,4,5,3,2,0]},8:{n:6,l:"23688932488864688988899:8789::9899;;",c:[3,4,6,18,12,5,5,1,2,16,9,3,7,3,5,14,7,3,19,17,15,13,10,4,13,5,8,11,5,1,12,4,4,1,1,0]},9:{n:6,l:"335689334568445678656778767789878899",c:[7,5,9,14,15,7,6,4,5,5,6,7,7,6,8,8,8,5,15,6,9,10,5,1,11,7,9,6,4,1,14,4,6,2,6,0]},10:{n:8,l:"1368999:3467898866789:997789::9:889:::::99::;;:;889:::;;989::;;;",c:[1,2,10,23,35,30,12,17,3,3,8,12,18,21,12,7,11,9,15,21,32,40,19,6,14,13,22,34,46,23,18,7,20,19,33,47,27,22,9,3,31,22,41,26,21,20,5,3,14,13,10,11,16,6,5,1,9,8,7,8,4,4,2,0]},11:{n:8,l:"23578989334688785567898876798:8988899:9:889::;:;87789:::8789::::",c:[3,4,10,24,34,33,21,15,5,3,4,10,32,17,11,10,11,7,13,18,30,31,20,5,25,11,19,59,27,18,12,5,35,33,31,58,30,16,7,5,28,26,32,19,17,15,8,14,14,12,9,13,14,9,4,1,11,4,6,6,6,3,2,0]},12:{n:8,l:"4357899933457788545678786566788876778889878889898778899:9889999:",c:[9,6,16,33,41,39,38,26,7,5,6,9,23,16,26,11,17,7,11,14,21,30,10,7,17,10,15,12,18,28,14,5,32,13,22,19,18,16,9,5,40,17,31,29,17,13,4,2,27,12,11,15,10,7,4,1,27,12,8,12,6,3,1,0]},13:{n:16,l:"1467899:9:;;<<==3467889999::;<<<667899::9::;;<==77899::::;;;;<==8799::;;:;;<<==>989:::;;;;<;==>>99::;;;;;<<<==>>:9:;;;<<<<===>@@989::;;<<<<==>??:9::;;;=<==>>>@?:::;;<<=<=>=>?@A;::;<<<<===>???@;;;<<=<=>>???@@@<;<===>>>>>?@?@@=<<===?>>A???A@@<<=>>>?>??@@CBC@",c:[1,5,14,21,34,51,46,71,42,52,68,52,67,44,43,19,3,4,12,19,31,26,44,33,31,24,32,24,31,35,22,14,15,13,23,36,59,49,77,65,29,40,30,40,27,33,42,16,22,20,37,61,56,79,73,64,43,76,56,37,26,31,25,14,35,16,60,57,97,75,114,91,54,73,55,41,48,53,23,24,58,27,50,96,76,70,93,84,77,58,79,29,74,49,41,17,47,45,78,74,115,94,90,79,69,83,71,50,59,38,36,15,72,34,56,95,92,85,91,90,86,73,77,65,51,44,43,42,43,20,30,44,55,78,72,87,78,61,46,54,37,30,20,16,53,25,41,37,44,59,54,81,66,76,57,54,37,18,39,11,35,33,31,57,42,82,72,80,47,58,55,21,22,26,38,22,53,25,23,38,70,60,51,36,55,26,34,23,27,14,9,7,34,32,28,39,49,75,30,52,48,40,52,28,18,17,9,5,45,21,34,64,56,50,49,45,31,19,12,15,10,7,6,3,48,23,20,39,36,35,53,21,16,23,13,10,6,1,4,2,16,15,17,27,25,20,29,11,17,12,16,8,1,1,0,1]},15:{n:16,l:"345778999::;;;<=43567788899:::;;55567788899::;;;6667788999:::;;;7677889999:::;;;8778889999::;;;<978889999:::;;<<9889999:::::;;;<9889999::::;;<<<989999:::;;;;<<<:999:::::;;;;<=<:999::::;;;;<<<=;:9:::;;;;;;<<==;::::;;;;<<<<<==<;;;;;;;<<<<==<=<;;;;;;<<<<<====",c:[7,12,18,53,47,76,124,108,89,123,108,119,107,81,122,63,13,5,16,27,46,36,61,51,42,70,52,83,65,41,59,36,19,17,15,24,41,34,59,48,40,64,50,78,62,80,56,33,29,28,25,43,39,63,55,93,76,59,93,72,54,75,50,29,52,22,42,40,67,57,95,79,72,57,89,69,49,66,46,27,77,37,35,66,58,52,91,74,62,48,79,63,90,62,40,38,125,32,60,56,50,92,78,65,55,87,71,51,73,51,70,30,109,53,49,94,88,75,66,122,91,73,56,42,64,44,21,25,90,43,41,77,73,63,56,92,77,66,47,67,48,53,36,20,71,34,67,60,58,49,88,76,67,106,71,54,38,39,23,15,109,53,51,47,90,82,58,57,48,72,57,41,23,27,62,9,86,42,40,37,70,64,52,43,70,55,42,25,29,18,11,11,118,68,30,55,50,46,74,65,49,39,24,16,22,13,14,7,91,44,39,38,34,63,52,45,31,52,28,19,14,8,9,3,123,60,58,53,47,43,32,22,37,24,17,12,15,10,2,1,71,37,34,30,28,20,17,26,21,16,10,6,8,6,2,0]},16:{n:16,l:"146899::;;;<<<=934678999:::;<;<8667899::;:;;;<<987899:::;;<<<==:9899::;;;<<<===99899:;;<;<<===>::99:;;;;<<<<==>::9::;;;<<====??::::;;;<<====>>>:;::;;<<====>=>=;;;:;<<<<=>>>??>:<;;;<<=>>>>>>=>;<<<<<====?>>>>@;><<<==>>>@???A?;==;<>>=>>?@?A?>;98899:::;;;;;;;8",c:[1,5,14,44,74,63,110,93,172,149,138,242,225,195,376,17,3,4,12,20,35,62,53,47,83,75,68,119,201,107,207,9,15,13,23,38,67,58,103,90,161,72,127,117,110,209,206,16,45,21,39,69,64,114,99,87,158,140,252,212,199,387,365,26,75,36,68,65,115,101,179,164,155,264,246,226,395,382,362,9,66,30,59,56,102,185,173,265,142,253,232,400,388,378,445,16,111,54,52,100,184,178,160,133,257,244,228,217,385,366,715,10,98,48,91,88,165,157,148,261,248,407,397,372,380,889,884,8,85,84,81,159,156,143,260,249,427,401,392,383,727,713,708,7,154,76,73,141,131,256,245,426,406,394,384,735,359,710,352,11,139,129,67,125,247,233,229,219,393,743,737,720,885,882,439,4,243,120,118,115,227,223,396,746,742,736,721,712,706,223,436,6,202,224,222,218,216,389,386,381,364,888,443,707,440,437,1728,4,747,211,210,208,370,379,734,723,714,1735,883,877,876,3459,865,2,377,369,102,187,726,722,358,711,709,866,1734,871,3458,870,434,0,12,10,7,11,10,17,11,9,13,12,10,7,5,3,1,3]},24:{n:16,l:"4467899::;;;;;<94456788999:::::865677889999:::;776778889999::::78778888999::::;79788889999:::::7988889999:::::;7:8889999:::::;;8:99999999::::;;8:999999:::::;;;8;9999::::::;;;;8;:999::::::;;;;8;:::::::::;;;;;8;:::::::;;;;;;;8<::::::;;;;;;;;88777777777788884",c:[15,13,46,80,146,262,248,434,426,669,653,649,621,517,1032,88,14,12,21,38,71,130,122,216,209,198,327,345,319,297,279,42,47,22,41,74,68,128,120,221,207,194,182,340,315,295,541,18,81,39,75,70,134,125,116,220,204,190,178,325,311,293,271,16,147,72,69,135,127,118,112,210,200,188,352,323,306,285,540,14,263,66,129,126,119,114,214,202,192,180,341,317,301,281,262,12,249,123,121,117,113,215,206,195,185,347,330,308,291,272,520,10,435,115,111,109,211,203,196,187,353,332,313,298,283,531,381,17,427,212,208,205,201,193,186,177,169,320,303,286,268,514,377,16,335,199,197,191,189,181,174,333,321,305,289,275,521,379,371,11,668,184,183,179,175,344,331,314,304,290,277,530,383,373,366,10,652,346,171,168,164,318,309,299,287,276,263,513,375,368,362,6,648,322,316,312,307,302,292,284,269,261,512,376,370,364,359,4,620,300,296,294,288,282,273,266,515,380,374,369,365,361,357,2,1033,280,278,274,267,264,259,382,378,372,367,363,360,358,356,0,43,20,19,17,15,13,11,9,7,6,4,7,5,3,1,3]},32:{n:16,l:"1445465645565666",c:[1,5,4,5,6,5,4,4,7,3,6,0,7,2,3,1]},33:{n:16,l:"4444444444444444",c:[15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0]},};
@@ -9291,8 +9449,69 @@ const mp3Encode=(()=>{let AT=4,SAVE=300;const _set=(a,b)=>{AT=a;SAVE=b;};
   if(rp&&rp.parentNode===hdr)hdr.insertBefore(b,rp.nextSibling);else if(ui&&ui.parentNode===hdr)hdr.insertBefore(b,ui);else hdr.appendChild(b);
   b.addEventListener('click',()=>setOpen(!ST.open));})();
 window.GLUE={open:()=>setOpen(true),close:()=>setOpen(false),addFiles,addBytes,SRC,get PRJ(){return PRJ;},ST,layout,mixAll,fitOf,similar,addSel,setVar,undo,redo,doMix,splitClip,delClip,
-  exportWav:()=>doExport("wav"),exportMp3:()=>doExport("mp3"),_mp3:mp3Encode,_warp:glWarp,_tune:glTuning,_onset:onsetNear,renderClip,RC,srcT,srcB,barPos,localBpm,changed,pushHist,uid};
+  exportWav:()=>doExport("wav"),exportMp3:()=>doExport("mp3"),exportLanes,_centered:centered,_mp3:mp3Encode,_warp:glWarp,_tune:glTuning,_onset:onsetNear,renderClip,RC,srcT,srcB,barPos,localBpm,changed,pushHist,uid};
 
+})();
+</script>
+<style id="lite-style">
+/* ===== Простая версия (html.liteWeb): прячем тяжёлое. Блок "lite-style", переносится lite/patch.py ===== */
+html.liteWeb #gBtn,html.liteWeb #glBtn,html.liteWeb #nfBtn,html.liteWeb #rpBtn,html.liteWeb #cmBtn,html.liteWeb #ecoBtn,
+html.liteWeb .deck .fxOpenRow,html.liteWeb .deck .row.tkey,html.liteWeb .deck .row.stems,html.liteWeb .stPop,
+html.liteWeb #gWin,html.liteWeb #pnWin,html.liteWeb #glWin,html.liteWeb .fxWin,html.liteWeb #nfDrawer,html.liteWeb #rpDrawer,html.liteWeb #cmWrap,html.liteWeb #cmBar,
+html.liteWeb .uiTog[data-o=eco],html.liteWeb .uiTog[data-o=eco]+.uiNote,html.liteWeb .uiTog[data-o=lite],html.liteWeb .uiTog[data-o=lite]+.uiNote,
+html.liteWeb .uiTog[data-h="deck:fxopen"],html.liteWeb .uiTog[data-h="deck:tkey"],html.liteWeb .uiTog[data-h="deck:stems"],html.liteWeb .uiTog[data-h="g:gbtn"],
+html.liteWeb .uiSec.liteHide{display:none!important}
+#liteSeg{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+#liteSeg button{height:32px;font-size:12px;padding:0 4px}
+#liteNote b{color:var(--txt)}
+#liteNote button{margin-top:6px}
+</style>
+<script id="lite-script">
+/* ===== Простая версия: блок "lite-script", переносится lite/patch.py.
+   window.DJ_LITE ставит блок lite-detect в <head>. В простой версии: всегда "Эконом", нет гитары и инструментов, Склейки,
+   стойки эффектов, Key Lock и тона, нейросетей (дорожки, голос из текста), Reaper, "Фишек", концертного режима; аккорды при разборе не ищутся.
+   Переключатель: "Интерфейс" > "Версия пульта" (и меню телефона). ===== */
+(()=>{const D=document,L=!!window.DJ_LITE;
+const ls={get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}},set:(k,v)=>{try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(e){}}};
+const tst=m=>{try{toast(m);}catch(e){}};
+const mode=()=>{const o=ls.get('dj-lite');return o==='1'?'lite':o==='0'?'full':'auto';};
+const willLite=m=>m==='lite'||(m==='auto'&&window.DJ_LITE_AUTO);
+function setMode(m){ls.set('dj-lite',m==='lite'?'1':m==='full'?'0':null);paint();
+  if(willLite(m)!==L){const n=D.getElementById('liteNote');if(n)n.innerHTML=(willLite(m)?'Простая версия':'Полная версия')+' включится после перезапуска. <button class="sm" id="liteR">Перезапустить сейчас</button>';
+    const r=D.getElementById('liteR');if(r)r.onclick=()=>location.reload();tst((willLite(m)?'Простая':'Полная')+' версия - после перезапуска пульта');}}
+function paint(){const m=mode();D.querySelectorAll('#liteSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===m));}
+// раздел в "Интерфейсе" (в браузере; в приложении для Windows всегда полная версия)
+if(!window.DJ_PC_APP){const db=D.querySelector('#uiDrawer .db');if(db){const s=D.createElement('div');s.className='uiSec';s.id='liteSec';
+  s.innerHTML='<h4>Версия пульта</h4><div class="seg" id="liteSeg"><button data-v="auto">Авто</button><button data-v="lite">Простая</button><button data-v="full">Полная</button></div>'+
+   '<div class="sub" id="liteNote" style="margin-top:6px">Сейчас: <b>'+(L?'простая':'полная')+'</b>. Простая - для телефона и слабых устройств: деки, микшер, пэды, плейлисты, запись. '+
+   'Без гитары и инструментов, нейросетей, стойки эффектов, Key Lock, Склейки и Reaper. Авто: простая на телефоне и планшете.</div>';
+  const before=D.getElementById('uiReset');if(before&&before.parentElement===db)db.insertBefore(s,before);else db.appendChild(s);
+  s.querySelectorAll('#liteSeg button').forEach(b=>b.onclick=()=>setMode(b.dataset.v));paint();}}
+// меню телефона: строчка про версию
+const mb=D.getElementById('mobMenuBtn');
+if(mb&&!window.DJ_PC_APP)mb.addEventListener('click',()=>setTimeout(()=>{const m=D.getElementById('mobMenu');if(!m||m.classList.contains('hidden')||m.querySelector('[data-a=lite]'))return;
+  m.insertAdjacentHTML('beforeend','<div class="mmh">Версия пульта</div><button data-a="lite">'+(L?'Включить полную версию (тяжёлая)':'Включить простую версию')+'</button>'+
+    '<div class="mmv">'+(L?'Сейчас простая: без гитары, нейросетей, стойки эффектов и Склейки, чтобы телефон не тормозил.':'Сейчас полная: на телефоне может тормозить.')+'</div>');},0));
+D.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#mobMenu [data-a=lite]');if(!b)return;e.stopPropagation();
+  ls.set('dj-lite',L?'0':'1');tst((L?'Полная':'Простая')+' версия: перезапуск...');setTimeout(()=>location.reload(),600);},true);
+if(!L)return;
+D.body.classList.add('liteWeb');
+// кнопки тяжёлых функций выключены совсем (не откроются и горячими клавишами)
+const HEAVY='#gBtn,#glBtn,#nfBtn,#rpBtn,#cmBtn,#ecoBtn,.deck .fxOpen,.deck .row.tkey button,.deck .row.stems button';
+const off=()=>D.querySelectorAll(HEAVY).forEach(b=>{b.disabled=true;b.tabIndex=-1;});off();setTimeout(off,1500);setTimeout(off,5000);
+// окна, открытые раньше (сохранённое состояние), закрываем
+const closeWins=()=>{D.querySelectorAll('#gWin,#pnWin,.fxWin').forEach(w=>w.classList.add('hidden'));
+  try{if(window.GW)GW.open=false;}catch(e){}D.body.classList.remove('glOpen');try{window.DJ_COVER=false;}catch(e){}};
+closeWins();setTimeout(closeWins,1500);
+// концертный режим, оставшийся включённым, выключаем; его раздел в "Интерфейсе" прячем
+setTimeout(()=>{try{if(window.CM&&CM.on&&window.setConcert)setConcert(false);}catch(e){}
+  const c=D.getElementById('cmUiSet');if(c){const s=c.closest('.uiSec');if(s)s.classList.add('liteHide');}},300);
+// Key Lock и тон: прячем - значит, и не держим включёнными
+setTimeout(()=>{try{decks.forEach(d=>{if(d.keyLock||d.keyShift){d.keyShift=0;d.setLock(false);}});}catch(e){}},2000);
+// буфер звука: в простой версии по умолчанию большой - показываем это в "Интерфейсе"
+if(!ls.get('dj-lat'))D.querySelectorAll('#uiLat button').forEach(b=>b.classList.toggle('on',b.dataset.v==='l'));
+// один раз объясняем
+if(!ls.get('dj-lite-seen')){ls.set('dj-lite-seen','1');setTimeout(()=>tst('Простая версия пульта: тяжёлые функции спрятаны, чтобы ничего не тормозило. Полная - в "Интерфейсе"'),2500);}
 })();
 </script>
 <style id="kurs-style">
@@ -9303,7 +9522,8 @@ window.GLUE={open:()=>setOpen(true),close:()=>setOpen(false),addFiles,addBytes,S
 </style>
 <script id="kurs-script">
 /* DJ-пульт на сайте студии (копия Студии из centrspektr/kursy, gitara/studiya).
-   Кнопка "Курс" в шапке и окно "Инструменты" сразу открыто: первый раз на гитаре, дальше на той вкладке, где ученик был. */
+   Кнопка "Курс" в шапке и окно "Инструменты" сразу открыто: первый раз на гитаре, дальше на той вкладке, где ученик был.
+   На телефоне пульт простой (window.DJ_LITE): гитары и инструментов нет, окно не открывается. */
 (()=>{
   const D=document;
   try{if(!localStorage.getItem('kurs-studiya')){localStorage.setItem('kurs-studiya','1');localStorage.setItem('dj-inst','guitar');}}catch(e){}
@@ -9321,7 +9541,8 @@ window.GLUE={open:()=>setOpen(true),close:()=>setOpen(false),addFiles,addBytes,S
     const upd=()=>{const d=GW.deck,no=!(d&&d.track);L.classList.toggle('hidden',!no);if(no)L.textContent='🎵 Загрузить песню на деку '+(d&&d.id||'A');};
     upd();setInterval(upd,700);
   }
-  addEventListener('load',()=>setTimeout(()=>{
+  // простая версия (телефон, планшет): гитары нет, окно не открываем
+  if(!window.DJ_LITE)addEventListener('load',()=>setTimeout(()=>{
     const w=D.getElementById('gWin'),btn=D.getElementById('gBtn');
     if(w&&btn&&w.classList.contains('hidden'))btn.click();
   },300));
