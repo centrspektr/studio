@@ -389,12 +389,50 @@ const DEF = [
       { t: 'strum', title: 'Шестёрка: Am-F-C-G', pat: SH, beats: 4, ch: ['Am', 'F', 'C', 'G'], bars: 2, bpm: 72 },
       { t: 'pick', title: 'Перебор: Am-F-C-G', pat: '3231323', beats: 4, ch: ['Am', 'F', 'C', 'G'], bass: { Am: 5, F: 4, C: 5, G: 6 }, bars: 1, bpm: 66 },
       { t: 'tip', text: 'Запиши, как играешь, и сравни с записью педагога. Потом эту гармонию можно отдать нейросети как основу трека.' }
+    ] },
+  { id: 'la1', title: 'Что такое нейросеть', desc: 'Как она учится, что такое промпт и почему ИИ ошибается.',
+    learn: ['Объясню, как нейросеть учится на примерах', 'Напишу точный промпт из 3 частей', 'Проверю ответ ИИ, а не верю на слово'],
+    blocks: [
+      { t: 'text', text: '**Нейросеть** - программа, которая научилась на огромном количестве примеров. Она не думает как человек: она подбирает самый похожий ответ.\n**Промпт** - задание для нейросети. Хороший промпт: что сделать, для чего и в каком виде.' },
+      { t: 'tip', text: 'Нейросеть может уверенно ошибаться. Важное всегда проверяй.' }
+    ] },
+  { id: 'la2', title: 'Безопасность и авторство', desc: 'Что нельзя писать нейросети, цифровая гигиена, кто автор.',
+    learn: ['Не пишу нейросети личные данные', 'Знаю правила цифровой гигиены', 'Честно говорю, где помогал ИИ'],
+    blocks: [
+      { t: 'text', text: 'Нейросети нельзя писать **личное**: адрес, телефон, пароли, данные друзей. Идея и выбор - твои, нейросеть - инструмент. Если помогал ИИ, так и говорим.' }
+    ] },
+  { id: 'la3', title: 'Песня и настроение', desc: 'Из чего состоит песня, аккорды и настроение, промпт стиля.',
+    learn: ['Знаю части песни: вступление, куплет, припев', 'Слышу разницу мажора и минора', 'Пишу промпт стиля для музыки'],
+    blocks: [
+      { t: 'text', text: 'Песня состоит из частей: **вступление, куплет, припев, проигрыш**. Настроение задают аккорды: мажор светлый, минор грустный. Нейросети для музыки нужен **промпт стиля**: жанр, темп, инструменты, настроение.' },
+      { t: 'chords', ch: ['C', 'Am', 'F', 'G'] }
+    ] },
+  { id: 'la4', title: 'Свой текст и права', desc: 'Пишем текст сами, что можно и нельзя брать чужое.',
+    learn: ['Написал куплет из 4 строк', 'Знаю, что нельзя брать чужой текст и голос', 'Выбрал лучший вариант трека'],
+    blocks: [
+      { t: 'text', text: 'Текст песни пишем **сами** - нейросеть может только подсказать рифму. Чужие тексты, мелодии и голоса без разрешения брать нельзя.' }
+    ] },
+  { id: 'la5', title: 'Свой трек с нейросетью', desc: 'Текст, промпт, репетиция и концерт: итог курса.',
+    learn: ['Готов текст: куплет и припев', 'Нейросеть сделала версию трека', 'Сыграл свою песню на гитаре'],
+    blocks: [
+      { t: 'text', text: 'Итог курса - **твоя песня**: свои аккорды и перебор (прошлый урок), свой текст и версия трека с нейросетью. В конце - концерт для группы.' },
+      { t: 'rec', title: 'Пример от педагога', kind: '', url: '', mid: '' }
     ] }
 ];
 
 /* в каком модуле Курса стоит урок (педагог может поменять в редакторе) */
-const MODMAP = { l1: 'm0', l14: 'm0', l2: 'm1', l10: 'm1', l5: 'm1', l3: 'm2', l9: 'm2', l13: 'm2', l4: 'm3', l11: 'm3', l12: 'm3', l6: 'm3', l7: 'm3', l8: 'm3', l15: 'm6' };
+const MODMAP = { la1: 'm4', la2: 'm4', la3: 'm5', la4: 'm5', la5: 'm6', l1: 'm0', l14: 'm0', l2: 'm1', l10: 'm1', l5: 'm1', l3: 'm2', l9: 'm2', l13: 'm2', l4: 'm3', l11: 'm3', l12: 'm3', l6: 'm3', l7: 'm3', l8: 'm3', l15: 'm6' };
 const MODN = { m0: '0. Знакомство', m1: '1. Бой', m2: '2. Перебор', m3: '3. Аккорды и ноты', m4: '4. Что такое ИИ', m5: '5. Музыка с ИИ', m6: '6. Свой трек' };
+/* задания курса (тренажёры и проверки) к каждому уроку: идут сразу после урока */
+const TASKMAP = {
+  l1: ['s0_hello', 's0_guitar', 's0_sit', 's0_strings'], l14: ['s0_tune', 's0_em', 's0_care', 's0_coach', 's0_final'],
+  l2: ['s1_pulse', 's1_count', 's1_down', 's1_six', 's1_am'], l10: ['s1_mute'], l5: ['s1_more', 's1_rep', 's1_coach', 's1_final'],
+  l3: ['s2_what', 's2_bass', 's2_four'], l9: ['s2_eight', 's2_tab'], l13: ['s2_slow', 's2_rep', 's2_coach', 's2_final'],
+  l4: ['s3_diag', 's3_minmaj', 's3_amdme'], l11: ['s3_cgd', 's3_clean'], l12: ['s3_notes'], l6: ['s3_neck'], l7: ['s3_rep'], l8: ['s3_barre', 's3_coach', 's3_final'],
+  la1: ['s4_what', 's4_prompt', 's4_better', 's4_err'], la2: ['s4_safe', 's4_hyg', 's4_author', 's4_rep', 's4_coach', 's4_final'],
+  la3: ['s5_struct', 's5_mood', 's5_style'], la4: ['s5_lyrics', 's5_rights', 's5_compare', 's5_rep', 's5_coach', 's5_final'],
+  l15: ['s6_idea', 's6_chords'], la5: ['s6_text', 's6_prompt', 's6_play', 's6_cmp', 's6_final']
+};
 DEF.forEach(l => { if (!l.mod) l.mod = MODMAP[l.id] || ''; });
 
 /* ================= состояние ================= */
@@ -432,7 +470,7 @@ function norm(list) {
   return (Array.isArray(list) ? list : []).filter(l => l && l.id && l.title).map(l => ({
     id: String(l.id), title: String(l.title), desc: String(l.desc || ''), tag: l.tag || '', hidden: !!l.hidden,
     learn: (Array.isArray(l.learn) ? l.learn : []).map(String).filter(Boolean), blocks: Array.isArray(l.blocks) ? l.blocks : [],
-    mod: /^m[0-9]$/.test(l.mod || '') ? l.mod : (MODMAP[l.id] || '')
+    mod: /^m[0-9]$/.test(l.mod || '') ? l.mod : (MODMAP[l.id] || ''), tasks: Array.isArray(l.tasks) ? l.tasks.map(String) : undefined
   }));
 }
 async function load() {
@@ -539,7 +577,7 @@ css.textContent = `
 .lrv{width:100%;max-height:360px;border-radius:14px;background:#000;display:block}audio.lrv{background:none;height:44px}
 .lrec .lbtn.on{border-color:var(--pk);background:rgba(255,45,138,.18)}.rstat{font-weight:800;font-size:13px;color:var(--yl);min-height:18px;margin:6px 0}
 .lset{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;border-radius:14px;border:1px dashed rgba(250,204,21,.45);background:rgba(250,204,21,.06);margin-bottom:14px;font-size:13.5px;font-weight:700}
-.lset span{flex:1 1 220px}.lbtn.pri{background:linear-gradient(135deg,var(--pk),var(--vi));border-color:transparent;color:#fff}
+.lset b{flex:1 1 100%;font-size:14.5px}.lset small{flex:1 1 100%;color:var(--dim);font-weight:600}.lset-b{display:flex;gap:8px;flex-wrap:wrap}.lset-b .lbtn{height:44px;padding:0 14px;font-size:14.5px;border-color:rgba(250,204,21,.45)}.lpin2{text-align:center;margin-top:10px}.lpin2 .lk{background:none;border:none;color:var(--dim);font:700 13px var(--fb);cursor:pointer;text-decoration:underline}.lbtn.pri{background:linear-gradient(135deg,var(--pk),var(--vi));border-color:transparent;color:#fff}
 .lgear{float:right;height:30px;padding:0 10px;border-radius:10px;border:1px dashed rgba(250,204,21,.6);background:rgba(250,204,21,.08);color:var(--yl);font:800 12.5px var(--fb);cursor:pointer;margin-left:8px}
 .lpk{font-size:13.5px;color:var(--dim);margin:-4px 0 10px}.lpk b{color:var(--yl);letter-spacing:.04em}
 .pl-chs span small{display:block;font:700 10px var(--fb);opacity:.75}
@@ -551,6 +589,7 @@ css.textContent = `
 .qadd .lbtn.on,.qbass .lbtn.on{border-color:var(--pk);background:rgba(255,45,138,.18)}
 #lm .qadd input{width:150px}#lm .qown{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:700;color:var(--dim);margin:8px 10px 0 0}#lm .qown input[data-qpat]{width:220px}#lm .qown select{width:auto}
 .qbass{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}.qbass b{min-width:44px;font:800 16px var(--fh)}
+#lm .lk{background:none;border:none;color:var(--dim);font:700 13px var(--fb);cursor:pointer;text-decoration:underline;margin:4px 0 10px}.rlib .lbtn small{display:block;font-size:10.5px;color:var(--dim)}.rlib .lbtn.on{border-color:var(--pk);background:rgba(255,45,138,.18)}
 .qprev{margin-top:8px}.qprev .card{margin:0;background:rgba(255,255,255,.02)}
 /* редактор */
 #lm{position:fixed;inset:0;z-index:400;background:rgba(5,2,12,.72);display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px}
@@ -656,10 +695,11 @@ function lessonInto(root, l, opt) {
   opt = opt || {};
   const s = lstat(l), got = LP.d[l.id] || [], ed = canEdit();
   root.innerHTML = `${opt.head ? `<div class="lv-h"><span class="ln">📖</span><div><small>Урок</small><h2>${esc(l.title)}</h2><p>${esc(l.desc)}</p></div></div>` : ''}
-  ${ed ? `<div class="lset"><span>👩‍🏫 Вы педагог: урок можно подстроить под группу.</span><button class="lbtn pri" data-ls="quick">⚙ Настроить урок</button><button class="lbtn" data-ls="full">✎ Полный редактор</button></div>` : ''}
+  ${ed ? `<div class="lset"><b>👩‍🏫 Настроить урок под сегодняшнее занятие:</b><div class="lset-b"><button class="lbtn" data-ls="chords">🎸 Аккорды</button><button class="lbtn" data-ls="pick">🖐 Перебор</button><button class="lbtn" data-ls="strum">🥁 Бой</button><button class="lbtn" data-ls="rec">🎬 Видео или 🎙 звук</button><button class="lbtn" data-ls="full">✎ Текст и всё остальное</button></div><small>Изменения видят ученики этого урока.</small></div>` : ''}
   ${l.learn.length ? `<div class="card lgoal"><h3>🎯 Надо выучить <span class="muted" style="font:700 13px var(--fb)" data-gc>${s.n} из ${s.of}</span></h3>
     ${l.learn.map(t => { const k = gk(t), on = got.includes(k); return `<label class="${on ? 'on' : ''}"><input type="checkbox" data-k="${k}" ${on ? 'checked' : ''}><span>${esc(t)}</span></label>`; }).join('')}</div>` : ''}
-  ${l.blocks.map((b, bi) => blockHtml(b, bi, ed)).join('')}`;
+  ${l.blocks.map((b, bi) => blockHtml(b, bi, ed)).join('')}
+  ${ed ? '' : '<p class="lpin2"><button class="lk" data-ls="login">👩‍🏫 Педагог? Войдите по PIN, чтобы настроить урок</button></p>'}`;
   root.querySelectorAll('.lgoal input').forEach(cb => cb.onchange = () => {
     const a = LP.d[l.id] || (LP.d[l.id] = []), k = cb.dataset.k;
     if (cb.checked) { if (!a.includes(k)) a.push(k); } else a.splice(a.indexOf(k), 1);
@@ -668,7 +708,7 @@ function lessonInto(root, l, opt) {
     if (cb.checked && navigator.vibrate) navigator.vibrate(20);
     if (st.done && cb.checked) say('Урок выучен! +10 очков в рейтинг студии');
   });
-  root.querySelectorAll('[data-ls]').forEach(x => x.onclick = () => x.dataset.ls === 'full' ? editLesson(l.id) : quickSet(l.id));
+  root.querySelectorAll('[data-ls]').forEach(x => x.onclick = () => { const a = x.dataset.ls; if (a === 'full') editLesson(l.id); else if (a === 'login') login(); else quickSet(l.id, a); });
   root.querySelectorAll('[data-bset]').forEach(x => x.onclick = () => quickSet(l.id, +x.dataset.bset));
   l.blocks.forEach((b, bi) => { const el = root.querySelector(`[data-b="${bi}"]`); if (el) bindBlock(el, b); });
 }
@@ -1022,7 +1062,7 @@ function modal(html) { if (!M) { M = document.createElement('div'); M.id = 'lm';
 function closeM() { if (M) M.classList.remove('on'); document.body.style.overflow = ''; }
 addEventListener('keydown', e => { if (e.key === 'Escape' && M && M.classList.contains('on')) closeM(); });
 function login() {
-  modal(`<h3>Вход для педагога</h3><p class="muted" style="font-size:14px;margin-bottom:10px">PIN тот же, что на портале СПЕКТР. После входа появятся кнопки правки уроков.</p>
+  modal(`<h3>Вход для педагога</h3><p class="muted" style="font-size:14px;margin-bottom:10px">PIN педагога студии. После входа в каждом уроке появятся кнопки настройки: аккорды, перебор, бой, записи.</p>
     <label class="f">PIN<input id="lPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></label><div class="mbar"><button class="btn sm" id="lC">Отмена</button><button class="btn pri sm" id="lG">Войти</button></div>`);
   setTimeout(() => $('#lPin').focus(), 50);
   $('#lC').onclick = closeM; $('#lPin').onkeydown = e => { if (e.key === 'Enter') $('#lG').click(); };
@@ -1150,6 +1190,7 @@ const REC_MAX = 60, REC_MB = 25;
 const MDB = { db: null,
   open() { return this.db || (this.db = new Promise((ok, no) => { try { const r = indexedDB.open('st_media', 1); r.onupgradeneeded = () => r.result.createObjectStore('m'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); } catch (e) { no(e); } })); },
   async put(id, v) { const d = await this.open(); return new Promise((ok, no) => { const t = d.transaction('m', 'readwrite'); t.objectStore('m').put(v, id); t.oncomplete = ok; t.onerror = () => no(t.error); }); },
+  async all() { const d = await this.open(); return new Promise(ok => { const out = [], r = d.transaction('m').objectStore('m').openCursor(); r.onsuccess = () => { const c = r.result; if (!c) return ok(out.sort((a, b) => b.at - a.at)); out.push({ id: c.key, at: c.value.at || 0, title: c.value.title || '', kind: c.value.kind || (/^video/.test(c.value.blob && c.value.blob.type) ? 'video' : 'audio') }); c.continue(); }; r.onerror = () => ok(out); }); },
   async get(id) { const d = await this.open(); return new Promise(ok => { const r = d.transaction('m').objectStore('m').get(id); r.onsuccess = () => ok(r.result || null); r.onerror = () => ok(null); }); }
 };
 const okUrl = u => /^https:\/\/[^\s"'<>]+$/.test(u || '');
@@ -1173,8 +1214,9 @@ function recBind(el, b) {
 function recEdHtml(b, i) {
   return `<label class="f">Подпись<input data-bi="${i}" data-rk="title" value="${esc(b.title || '')}" placeholder="Например: Перебор восьмёрка, медленно" maxlength="80"></label>
     <div class="qadd"><button class="lbtn" data-bi="${i}" data-rrec="audio">🎙 Записать звук</button><button class="lbtn" data-bi="${i}" data-rrec="video">🎥 Записать видео</button>
-      <label class="lbtn" style="display:inline-flex;align-items:center;cursor:pointer">📁 Выбрать файл<input type="file" accept="audio/*,video/*" data-bi="${i}" data-rfile hidden></label></div>
+      <label class="lbtn" style="display:inline-flex;align-items:center;cursor:pointer">📁 Загрузить файл (MP3 или видео)<input type="file" accept="audio/*,video/*" data-bi="${i}" data-rfile hidden></label></div>
     <div class="ehint">До ${REC_MAX} секунд: бой, перебор или аккорды. Видно и слышно только этот урок.</div>
+    <div class="rlib" data-rlib="${i}"></div>
     <div class="rstat" data-rst="${i}">${b.url ? '✓ Запись на сервере' : b.mid ? '✓ Запись сохранена на этом устройстве' : ''}</div>
     <div class="rlive" data-rlive="${i}"></div>
     <details style="margin-top:6px"><summary class="muted" style="font-size:13px;cursor:pointer">или ссылка на готовый файл</summary><label class="f" style="margin-top:6px">Прямая ссылка на .mp3 / .mp4 (https://…)<input data-bi="${i}" data-rk="url" value="${esc(b.url || '')}" inputmode="url"></label></details>`;
@@ -1190,7 +1232,7 @@ async function recStore(b, blob, vid) {
     if (!j || !j.ok) throw new Error('no mput');
     if (j.put && okUrl(j.url)) { const r = await fetch(j.put, { method: 'PUT', body: blob, headers: { 'Content-Type': blob.type || 'application/octet-stream' } }); if (r.ok) { b.url = j.url; b.mid = ''; return 'server'; } }
   } catch (e) {}
-  const id = 'r' + Date.now().toString(36); await MDB.put(id, { blob, at: Date.now() }); b.mid = id; b.url = ''; return 'local';
+  const id = 'r' + Date.now().toString(36); await MDB.put(id, { blob, at: Date.now(), title: b.title || '', kind: b.kind }); b.mid = id; b.url = ''; return 'local';
 }
 let REC = null;
 function recEdBind(box, E, draw) {
@@ -1204,6 +1246,12 @@ function recEdBind(box, E, draw) {
     st.textContent = where === 'server' ? '✓ Запись на сервере, ученики её увидят после сохранения урока' : '✓ Сохранено на этом устройстве. Загрузка для учеников заработает после обновления сервера.';
     const lv = box.querySelector(`[data-rlive="${i}"]`); lv.innerHTML = vid ? '<video controls playsinline class="lrv"></video>' : '<audio controls class="lrv"></audio>'; lv.firstChild.src = URL.createObjectURL(blob);
   };
+  /* заранее записанные: любую можно поставить в этот урок */
+  box.querySelectorAll('[data-rlib]').forEach(el => MDB.all().then(list => {
+    const i = +el.dataset.rlib, b = E.blocks[i]; if (!list.length) return;
+    el.innerHTML = `<div class="ehint" style="margin:8px 0 4px">📚 Мои записи - нажмите, чтобы поставить в урок:</div><div class="qadd">${list.slice(0, 12).map(r => `<button class="lbtn ${b.mid === r.id ? 'on' : ''}" data-rpick="${r.id}" data-kind="${r.kind}">${r.kind === 'video' ? '🎥' : '🎙'} ${esc(r.title || 'Без подписи')}<small>${new Date(r.at).toLocaleDateString('ru-RU')}</small></button>`).join('')}</div>`;
+    el.querySelectorAll('[data-rpick]').forEach(x => x.onclick = () => { b.mid = x.dataset.rpick; b.kind = x.dataset.kind; b.url = ''; if (!b.title) { const t = x.textContent.replace(/^\S+\s/, '').replace(/\d{2}\.\d{2}\.\d{4}$/, '').trim(); if (t !== 'Без подписи') b.title = t; } draw(true); });
+  }).catch(() => {}));
   box.querySelectorAll('[data-rfile]').forEach(x => x.onchange = () => { const f = x.files && x.files[0]; if (f) done(+x.dataset.bi, f, /^video/.test(f.type)); });
   box.querySelectorAll('[data-rrec]').forEach(x => x.onclick = async () => {
     const i = +x.dataset.bi, vid = x.dataset.rrec === 'video', st = box.querySelector(`[data-rst="${i}"]`), lv = box.querySelector(`[data-rlive="${i}"]`);
@@ -1248,13 +1296,17 @@ function qBlock(b, i) {
   return `<div class="eb" data-qb="${i}"><div class="eb-h"><b>${BT[b.t]}${b.title ? ': ' + esc(b.title) : ''}</b><button data-bi="${i}" data-qm="del" aria-label="Убрать блок">✕</button></div>${h}
     <div class="qprev" data-qprev="${i}"></div></div>`;
 }
+const QNEW = (t, E) => { const last = [...E.blocks].reverse().find(b => b.ch && b.ch.length), ch = last ? last.ch.slice() : ['Am', 'C', 'Em', 'Em'];
+  return t === 'pick' ? { t, title: 'Перебор: 3231323', pat: '3231323', beats: 4, ch, bars: 1, bpm: 70 } : t === 'strum' ? { t, title: 'Бой: шестёрка', pat: SH.slice(), beats: 4, ch, bars: 2, bpm: 70 } : t === 'chords' ? { t, ch } : { t: 'rec', title: '', kind: '', url: '', mid: '' }; };
 function quickSet(id, only) {
   const src = C.find(l => l.id === id); if (!src) return;
   const E = clone(src);
-  let focus = only != null && E.blocks[only] ? only : null;
+  let focus = null;
+  if (typeof only === 'number' && E.blocks[only]) focus = [only];
+  else if (typeof only === 'string') { let ix = E.blocks.map((b, i) => b.t === only ? i : -1).filter(i => i >= 0); if (!ix.length) { E.blocks.push(QNEW(only, E)); ix = [E.blocks.length - 1]; } focus = ix; }
   const draw = keep => {
     const sc = M ? M.scrollTop : 0;
-    const idx = E.blocks.map((b, i) => i).filter(i => /^(chords|strum|pick|rec)$/.test(E.blocks[i].t) && (focus == null || i === focus));
+    const idx = E.blocks.map((b, i) => i).filter(i => /^(chords|strum|pick|rec)$/.test(E.blocks[i].t) && (focus == null || focus.includes(i)));
     const box = modal(`<h3>⚙ Настроить: ${esc(E.title)}</h3>
       <p class="muted" style="font-size:13.5px;margin-bottom:10px">Меняется только то, что видят ученики этого урока. Под каждым блоком - как он прозвучит.</p>
       ${idx.map(i => qBlock(E.blocks[i], i)).join('') || '<p class="muted">В уроке пока нет аккордов, боя или перебора.</p>'}
@@ -1273,16 +1325,14 @@ function quickSet(id, only) {
     box.querySelectorAll('[data-qk]').forEach(x => x.onchange = () => { B(x)[x.dataset.qk] = +x.value || 0; draw(true); });
     box.querySelectorAll('[data-qm]').forEach(x => x.onclick = () => { if (!confirm('Убрать этот блок из урока?')) return; E.blocks.splice(+x.dataset.bi, 1); focus = null; draw(true); });
     box.querySelectorAll('[data-qnew]').forEach(x => x.onclick = () => {
-      const t = x.dataset.qnew, last = [...E.blocks].reverse().find(b => b.ch && b.ch.length), ch = last ? last.ch.slice() : ['Am', 'C', 'Em', 'Em'];
-      const nb = t === 'pick' ? { t, title: '', pat: '3231323', beats: 4, ch, bars: 1, bpm: 70 } : t === 'strum' ? { t, title: '', pat: SH.slice(), beats: 4, ch, bars: 2, bpm: 70 } : t === 'chords' ? { t, ch } : { t: 'rec', title: '', kind: '', url: '', mid: '' };
-      E.blocks.push(nb); focus = null; draw(); if (M) M.scrollTop = M.scrollHeight;
+      E.blocks.push(QNEW(x.dataset.qnew, E)); if (focus) focus.push(E.blocks.length - 1); draw(); if (M) M.scrollTop = M.scrollHeight;
     });
     recEdBind(box, E, draw);
     const all = $('#qAll'); if (all) all.onclick = () => { focus = null; draw(); };
     /* как прозвучит: тот же блок, что у ученика */
     box.querySelectorAll('[data-qprev]').forEach(el => { const i = +el.dataset.qprev, b = E.blocks[i]; if (b.t === 'rec') return; el.innerHTML = blockHtml(b, i, false); const bl = el.querySelector('[data-b]'); if (bl) bindBlock(bl, b); });
     $('#qC').onclick = () => { pStop(); closeM(); };
-    $('#qS').onclick = () => { pStop(); const i = C.findIndex(l => l.id === E.id); if (i >= 0) C[i] = E; closeM(); saveAll(); };
+    $('#qS').onclick = () => { pStop(); E.blocks.forEach(b => { if (b.t === 'rec' && b.mid && b.title) MDB.get(b.mid).then(r => { if (r && r.title !== b.title) { r.title = b.title; MDB.put(b.mid, r); } }).catch(() => {}); }); const i = C.findIndex(l => l.id === E.id); if (i >= 0) C[i] = E; closeM(); saveAll(); };
   };
   draw();
 }
@@ -1325,7 +1375,7 @@ const SUBS = [];
 let notT = 0;
 function lesNotify() { clearTimeout(notT); notT = setTimeout(() => SUBS.forEach(f => { try { f(); } catch (e) {} }), 0); }
 window.LES = {
-  list: () => vis().map(l => ({ id: l.id, title: l.title, desc: l.desc, mod: l.mod || MODMAP[l.id] || '', hidden: !!l.hidden, n: C.indexOf(l) + 1 })),
+  list: () => vis().map(l => ({ id: l.id, title: l.title, desc: l.desc, mod: l.mod || MODMAP[l.id] || '', hidden: !!l.hidden, n: C.indexOf(l) + 1, tasks: l.tasks || TASKMAP[l.id] || [] })),
   render(el, id) { const l = C.find(x => x.id === id); if (!l) { el.innerHTML = '<p class="muted">Урок не найден: педагог мог его убрать.</p>'; return false; } pStop(); lessonInto(el, l, { head: false }); return true; },
   stat: id => { const l = C.find(x => x.id === id); return l ? lstat(l) : { n: 0, of: 0 }; },
   canEdit: () => canEdit(),

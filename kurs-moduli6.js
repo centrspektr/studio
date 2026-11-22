@@ -18,6 +18,8 @@ const CLUB = CFG.club || 'vzlet', GRP = 'grp' in CFG ? CFG.grp : ' Взлёта'
 const KEY = CFG.store || 'vz_kurs', PASS = 0.7;
 const PREVIEW_OPEN = CFG.open || ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];   // пробная версия: все модули открыты для проверки
 const isCoach = () => typeof MODE !== 'undefined' && MODE === 'coach';
+/* педагог, вошедший по PIN (может настраивать уроки): видит и открывает все уроки */
+const teach = () => !!(window.LES && LES.canEdit());
 const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const fx = (n, d = 1) => Number(n).toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -35,8 +37,8 @@ const T = id => (S.t[id] = S.t[id] || { s: {} });
 const stepSt = (id, i) => { const t = T(id); return (t.s[i] = t.s[i] || {}); };
 const taskDone = id => !!(S.t[id] && S.t[id].done);
 /* уже начатое или пройденное задание открыто всегда (например, если перед ним позже встал новый урок) */
-function taskOpen(m, k) { const p = S.t[m.tasks[k - 1]], me = S.t[m.tasks[k]]; return isCoach() || k === 0 || taskDone(m.tasks[k]) || !!(me && me.s && Object.keys(me.s).some(i => me.s[i] && me.s[i].ok)) || taskDone(m.tasks[k - 1]) || !!(p && (p.was || p.skip)); }
-function modOpen(m) { return !!m.tasks && (isCoach() || PREVIEW_OPEN.includes(m.id) || (S.open || []).includes(m.id)); }
+function taskOpen(m, k) { const p = S.t[m.tasks[k - 1]], me = S.t[m.tasks[k]]; return isCoach() || teach() || k === 0 || taskDone(m.tasks[k]) || !!(me && me.s && Object.keys(me.s).some(i => me.s[i] && me.s[i].ok)) || taskDone(m.tasks[k - 1]) || !!(p && (p.was || p.skip)); }
+function modOpen(m) { return !!m.tasks && (isCoach() || teach() || PREVIEW_OPEN.includes(m.id) || (S.open || []).includes(m.id)); }
 function modProg(m) { if (!m.tasks) return 0; return m.tasks.filter(taskDone).length / m.tasks.length; }
 /* очки задания = pts x средний лучший результат проверок задания (доп. задания очков не дают) */
 function taskPts(id) {
@@ -57,27 +59,45 @@ function clsLvl() {
 S.lvl = S.lvl || {};
 const modOf = tid => K.mods.find(x => x.tasks && x.tasks.includes(tid));
 /* ---------- уроки гитары (uroki2.js, window.LES) встают в модули: задание "Урок: …" перед повторением и проверкой педагога ---------- */
-let lesSig = '';
+let lesSig = '', LSN = [];
+const M0 = {}; K.mods.forEach(m => { if (m.tasks) M0[m.id] = m.tasks.slice(); });
+/* урок = сам урок (задание L_<id>, шаг "Урок") + его задания курса. Порядок в модуле: урок, его задания, следующий урок...
+   Модули остались внутри (их открывает педагог), ученик видит только уроки подряд. */
 function lesSync() {
   if (!window.LES) return false;
   const list = LES.list().filter(l => l.mod && (!l.hidden || LES.canEdit()));
-  const sig = JSON.stringify(list.map(l => [l.id, l.mod, l.title, l.desc]));
+  const sig = JSON.stringify(list.map(l => [l.id, l.mod, l.title, l.desc, l.tasks]));
   if (sig === lesSig) return false; lesSig = sig;
-  K.mods.forEach(m => { if (m.tasks) m.tasks = m.tasks.filter(id => !/^L_/.test(id)); });
   Object.keys(K.lib).forEach(id => { if (/^L_/.test(id)) delete K.lib[id]; });
-  const by = {}; list.forEach(l => (by[l.mod] = by[l.mod] || []).push(l));
-  Object.keys(by).forEach(mid => {
-    const m = K.mods.find(x => x.id === mid); if (!m || !m.tasks) return;
-    let at = m.tasks.findIndex(id => /_(rep|coach|final)$/.test(id)); if (at < 0) at = m.tasks.length;
-    m.tasks.splice(at, 0, ...by[mid].map(l => { const id = 'L_' + l.id; K.lib[id] = { t: 'Урок: ' + l.title, e: '📖', sub: l.desc, pts: 10, les: l.id, steps: [{ s: 'lesson', l: l.id, name: 'Урок' }] }; return id; }));
+  LSN = [];
+  K.mods.forEach(m => {
+    if (!m.tasks) return;
+    const base = M0[m.id] || [], used = new Set(), seq = [];
+    list.filter(l => l.mod === m.id).forEach(l => {
+      const tid = 'L_' + l.id, tk = (l.tasks || []).filter(t => base.includes(t) && !used.has(t));
+      tk.forEach(t => used.add(t));
+      K.lib[tid] = { t: l.title, e: '📖', sub: l.desc, pts: 10, les: l.id, steps: [{ s: 'lesson', l: l.id, name: 'Урок' }] };
+      seq.push(tid, ...tk); LSN.push({ id: l.id, tid, t: l.title, sub: l.desc, mod: m.id, tasks: tk });
+    });
+    const rest = base.filter(t => !used.has(t));
+    if (rest.length) {
+      const last = [...LSN].reverse().find(L => L.mod === m.id);
+      if (last) last.tasks.push(...rest); else LSN.push({ id: '', tid: rest[0], t: m.t, sub: m.sub, mod: m.id, tasks: rest.slice(1), pseudo: 1 });
+      seq.push(...rest);
+    }
+    m.tasks = seq;
   });
   return true;
 }
 lesSync();
+const lsnOf = tid => LSN.find(L => L.tid === tid || L.tasks.includes(tid));
+const lsnNo = L => LSN.indexOf(L) + 1;
+const lsnItems = L => [L.tid].concat(L.tasks);
 if (window.LES) LES.sub(() => {
   const ch = lesSync(); if (!box || (isCoach() && !CO.as)) return;
   if (VIEW.t && /^L_/.test(VIEW.t)) { if (K.lib[VIEW.t] && modOf(VIEW.t)) taskView(VIEW.t, VIEW.step); else home(); }
-  else if (ch && VIEW.t == null) { VIEW.m ? modView(VIEW.m) : home(); }
+  else if (VIEW.t == null) home();
+  else if (ch && !modOf(VIEW.t)) home();
 });
 /* BETA: бета-версия 2 - все тестируют на базовом уровне, если тренер или сам ученик не выбрал другой. После беты - 0 */
 const BETA = 'beta' in CFG ? CFG.beta : 2;
@@ -123,6 +143,7 @@ function cellSvg(x, y, w, h, lvl, txt, d) {
     `<rect x="${x + 5}" y="${y + h - 5 - fh}" width="${w - 10}" height="${fh}" rx="4" class="kc-f"/>` + (txt ? `<text x="${x + w / 2}" y="${y + h / 2 + 5}" class="kc-x">${txt}</text>` : '') + '</g>';
 }
 function pic(k) {
+  if (k && k.indexOf('gtr:') === 0) return gtrSvg(k.slice(4));
   if (k && k.indexOf('e:') === 0) return `<div class="kpic-e" aria-hidden="true">${E(k.slice(2))}</div>`;
   if (k && k.indexOf('chain:') === 0) return `<div class="kchain" aria-hidden="true">${k.slice(6).split('>').map((t, i) => (i ? '<i>→</i>' : '') + `<span style="animation-delay:${i * 140}ms">${E(t)}</span>`).join('')}</div>`;
   const V = (b, w) => `<svg viewBox="0 0 ${w || 240} 120" class="kpic" aria-hidden="true">${b}</svg>`;
@@ -151,6 +172,19 @@ function pic(k) {
     default: return K.pic ? K.pic(k) || '' : '';   // свои картинки курса (zadaniya.js: pic)
   }
 }
+
+/* акустическая гитара, нужная часть подсвечена: korpus | grif | golova | struny */
+function gtrSvg(part) {
+  const on = p => p === part ? ' kg-on' : '';
+  return `<svg viewBox="0 0 320 130" class="kpic kgtr" aria-hidden="true">
+    <g class="kg-p${on('korpus')}"><path d="M20 65c0-30 18-48 44-48 16 0 24 8 36 8s20-8 36-8c26 0 40 18 40 48s-14 48-40 48c-16 0-24-8-36-8s-20 8-36 8c-26 0-44-18-44-48z" class="kg-body"/><circle cx="118" cy="65" r="15" class="kg-hole"/><rect x="58" y="55" width="8" height="20" rx="2" class="kg-bridge"/></g>
+    <g class="kg-p${on('grif')}"><rect x="134" y="57" width="128" height="16" rx="3" class="kg-neck"/>${[150, 166, 181, 195, 208, 220, 231, 241, 250].map(x => `<line x1="${x}" x2="${x}" y1="57" y2="73" class="kg-fret"/>`).join('')}${[173, 201, 226].map(x => `<circle cx="${x}" cy="65" r="2" class="kg-dot"/>`).join('')}</g>
+    <g class="kg-p${on('golova')}"><path d="M262 54h40l8 4v14l-8 4h-40z" class="kg-head"/>${[272, 286, 300].map(x => `<circle cx="${x}" cy="50" r="5" class="kg-peg"/><circle cx="${x}" cy="80" r="5" class="kg-peg"/>`).join('')}</g>
+    <g class="kg-p${on('struny')}">${[0, 1, 2, 3, 4, 5].map(i => `<line x1="62" x2="300" y1="${59 + i * 2.4}" y2="${59 + i * 2.4}" class="kg-str"/>`).join('')}</g>
+    <text x="${{ korpus: 98, grif: 198, golova: 286, struny: 180 }[part] || 160}" y="126" class="kp-s2" text-anchor="middle">${{ korpus: 'корпус', grif: 'гриф', golova: 'голова и колки', struny: 'струны' }[part] || ''}</text></svg>`;
+}
+const GPIC = { 'e:🪵': 'gtr:korpus', 'e:🔩': 'gtr:golova', 'e:〰️': 'gtr:struny' };
+Object.keys(K.lib).forEach(id => K.lib[id].steps.forEach(st => (st.cards || []).forEach(cd => { if (GPIC[cd.pic]) cd.pic = GPIC[cd.pic]; })));
 
 /* ---------- свои слова продукта: CFG.words [['тренер', 'педагог'], ...] - меняем в готовом тексте вкладки ---------- */
 const WORDS = (CFG.words || []).map(w => [new RegExp(w[0], 'g'), w[1]]);
@@ -261,6 +295,20 @@ css.textContent = `
 .kr-card.kr-novice{display:block}.kr-novice summary{display:flex;gap:10px;align-items:baseline;cursor:pointer;list-style:none}.kr-novice summary::-webkit-details-marker{display:none}.kr-novice summary small{color:var(--dim);font-weight:700}
 .kr-novice ol{margin:10px 0 8px 20px;display:grid;gap:6px}.kr-novice .mut{font-size:13.5px;margin-bottom:10px}
 .kr-les{padding:14px}.kr-les .card{box-shadow:none}
+.kr-entry{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}.kr-entry>span{font-size:13.5px;font-weight:700;color:var(--dim)}.kr-entry .kr-ed{color:#fde68a}
+.kr-sum{display:flex;gap:6px 18px;flex-wrap:wrap;align-items:center;margin:12px 2px;font-size:14px;color:var(--dim);font-weight:700}.kr-sum b{color:#fff}.kr-sum .kr-author{flex:1 1 100%;font-size:12px;font-weight:600}
+.kr-part{margin:18px 2px 8px;font-weight:800;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.kr-lsn{display:grid;gap:8px}
+.kr-l{display:grid;grid-template-columns:46px 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 14px;border-radius:18px;border:1px solid rgba(255,255,255,.1);background:rgba(20,14,36,.75);color:inherit;font:inherit;cursor:pointer;animation:krIn .4s both}
+.kr-l .n{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:18px;background:rgba(255,255,255,.06)}
+.kr-l.ok .n{background:linear-gradient(135deg,#22c55e,#14b8a6);color:#fff}.kr-l.cur{border-color:rgba(var(--krgb),.8);box-shadow:0 0 0 2px rgba(var(--krgb),.25)}
+.kr-l.lock{opacity:.5;cursor:default}.kr-l .tx b{display:block;font-size:16px;line-height:1.25}.kr-l .tx small{display:block;color:var(--dim);font-size:13px;margin-top:2px}
+.kr-l .st{font-size:12.5px;font-weight:800;color:var(--dim);text-align:right;max-width:120px}.kr-l.ok .st{color:#86efac}
+.kr-lb{display:block;height:5px;border-radius:9px;background:rgba(255,255,255,.08);margin-top:7px;max-width:240px;overflow:hidden}.kr-lb i{display:block;height:100%;background:linear-gradient(90deg,#22d3ee,#a78bfa)}
+@media(max-width:560px){.kr-l{grid-template-columns:40px 1fr;gap:10px}.kr-l .n{width:40px;height:40px;font-size:16px}.kr-l .st{grid-column:2;text-align:left;max-width:none}}
+.kr-ltasks{margin-top:18px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.15)}
+.kgtr .kg-body{fill:#7c4a2a;stroke:#3b2214;stroke-width:2}.kgtr .kg-hole{fill:#1a0f08}.kgtr .kg-bridge{fill:#2a1a0e}.kgtr .kg-neck{fill:#4a2e1c}.kgtr .kg-fret{stroke:#d9d2c0;stroke-width:1.4}.kgtr .kg-dot{fill:#e8e0cc}
+.kgtr .kg-head{fill:#3b2214}.kgtr .kg-peg{fill:#c9c2b0}.kgtr .kg-str{stroke:#e9e4d6;stroke-width:.8;opacity:.8}.kgtr .kg-p{opacity:.45;transition:opacity .3s}.kgtr .kg-p.kg-on{opacity:1}.kgtr .kg-p.kg-on .kg-body,.kgtr .kg-p.kg-on .kg-neck,.kgtr .kg-p.kg-on .kg-head{stroke:#ff2d8a;stroke-width:3}.kgtr .kg-p.kg-on .kg-str{stroke:#ff2d8a;opacity:1;stroke-width:1.2}
 /* тренажёры */
 .kg-stack{display:flex;gap:10px;justify-content:center;align-items:flex-end;min-height:150px;padding:10px;flex-wrap:wrap}
 .kg-stack.par{flex-direction:row}.kg-stack.ser{flex-direction:column-reverse;align-items:center;gap:0}.kg-stack.ser .kg-cell{border-radius:6px;margin-top:-2px}
@@ -331,7 +379,7 @@ function mount(html, quiet) {
   const dp = coV ? coDepth() : 0, dir = coV && !quiet && CO.dp && dp !== CO.dp ? (dp > CO.dp ? 'zin' : 'zout') : '';
   if (coV) CO.dp = dp;
   if (dir && !RED) { const k = box.firstElementChild, r = box.getBoundingClientRect(); k.style.transformOrigin = Math.max(0, PX - r.left) + 'px ' + Math.max(0, PY - r.top) + 'px'; k.classList.add(dir); }
-  else if (!quiet && window.tabFx && !RED) window.tabFx(box, 0, false);
+  else if (!quiet && !NAV.quick && window.tabFx && !RED) window.tabFx(box, 0, false);
 }
 /* класс на body, пока открыта вкладка Курс: прячем плавающие кнопки других скриптов, в окне тренера - плашку и шапку для учеников */
 function bodyCls() {
@@ -339,7 +387,7 @@ function bodyCls() {
   B.toggle('kr-on', on); B.toggle('kr-co', on && isCoach() && !CO.as);
 }
 /* кнопка "нашёл ошибку" в шапке курса (сама плавающая кнопка во вкладке Курс скрыта) */
-const bugBtn = () => '<button class="kr-bug" data-k="bug" title="Нашёл ошибку? Сообщить" aria-label="Сообщить об ошибке">⚠</button>';
+const bugBtn = () => '';   /* ошибку сообщают кнопкой "?" внизу справа (oshibka2.js) */
 /* ---------- назад / вперёд: история экранов и "дальше по порядку" ---------- */
 const NAV = { h: [], i: -1, off: false };
 function navCur() {
@@ -361,16 +409,16 @@ function navShow(d) {
 }
 function navUp() {
   if (isCoach() && !CO.as) { if (CO.ct) CO.ct = null; else if (CO.mod) CO.mod = null; else if (CO.cm) CO.cm = null; else if (CO.who) CO.who = null; else return false; coDraw(); return true; }
-  if (VIEW.t) { modView(VIEW.m); return true; } if (VIEW.m) { home(); return true; } return false;
+  if (VIEW.t) { const L = lsnOf(VIEW.t); if (L && L.tid !== VIEW.t) taskView(L.tid); else home(); return true; } return false;
 }
 function navLabel(d) {
   try {
     if (d.c) return d.ct ? K.lib[d.ct].t : d.cm ? mName(mOf(d.cm)) : d.who ? (CO.list.find(x => x.id === d.who) || {}).n || 'Ученик' : d.tab === 'mo' ? 'Модули' : d.tab === 'st' ? 'Ученики' : 'Обзор';
-    return d.t ? K.lib[d.t].t : d.m ? mName(mOf(d.m)) : 'Курс';
+    return d.t ? (K.lib[d.t] ? K.lib[d.t].t : 'Урок') : 'Все уроки';
   } catch (e) { return ''; }
 }
 function navNext() {
-  if (LESN && VIEW.t === LESN.tid && VIEW.step === LESN.i) { const m = modOf(VIEW.t), k = m.tasks.indexOf(VIEW.t), nx = m.tasks[k + 1]; return { les: 1, label: nx ? K.lib[nx].t : 'К модулю' }; }
+  if (LESN && VIEW.t === LESN.tid && VIEW.step === LESN.i) { const m = modOf(VIEW.t), k = m.tasks.indexOf(VIEW.t), nx = m.tasks[k + 1], nm = K.mods[K.mods.indexOf(m) + 1], nf = !nx && nm && nm.tasks && nm.tasks.length && modOpen(nm) ? nm.tasks[0] : null; return { les: 1, label: nx ? K.lib[nx].t : nf ? K.lib[nf].t : 'Все уроки' }; }
   if (CARD && VIEW.t === CARD.tid && VIEW.step === CARD.i) { const L = K.lib[VIEW.t], n = L.steps.length; return { card: 1, label: CARD.c < CARD.N - 1 ? 'карточка ' + (CARD.c + 2) + ' из ' + CARD.N : (CARD.i < n - 1 ? stepName(L.steps[CARD.i + 1]) : 'Итог задания') }; }
   if (NAV.i < NAV.h.length - 1) return { r: 1, label: navLabel(NAV.h[NAV.i + 1].d) };
   if (isCoach() && !CO.as) return null;
@@ -381,8 +429,8 @@ function navNext() {
     if (st === -1) { const m = modOf(VIEW.t), k = m.tasks.indexOf(VIEW.t), nx = m.tasks[k + 1];
       if (nx && taskOpen(m, k + 1)) return { t: nx, label: K.lib[nx].t };
       const nm = K.mods[K.mods.indexOf(m) + 1];
-      if (!nx && modProg(m) === 1 && nm && nm.tasks && modOpen(nm)) return { m: nm.id, label: 'Модуль ' + nm.n };
-      return { m: m.id, label: 'К модулю' }; }
+      if (!nx && nm && nm.tasks && nm.tasks.length && modOpen(nm)) return { t: nm.tasks[0], label: K.lib[nm.tasks[0]].t };
+      return { home: 1, label: 'Все уроки' }; }
     return null;
   }
   if (VIEW.m) { const m = mOf(VIEW.m), k = m && m.tasks ? m.tasks.findIndex((id, i) => !taskDone(id) && !(S.t[id] && S.t[id].skip) && taskOpen(m, i)) : -1; return k >= 0 ? { t: m.tasks[k], label: K.lib[m.tasks[k]].t } : null; }
@@ -393,34 +441,35 @@ function navHtml() {
   /* у тренера своя навигация кнопками "←" на экранах; внизу только значок сохранения */
   if (isCoach() && !CO.as) return `<div class="kr-svc" id="krSv" role="status">${coSvHtml()}</div>`;
   const back = NAV.i > 0 || !!(VIEW.t || VIEW.m) || !!(CARD && CARD.c > 0), nx = navNext();
-  const wait = !nx && VIEW.t ? 'Пройди этот шаг, и кнопка откроется' : !nx && VIEW.m ? 'Дальше откроет педагог' : '';
+  const wait = !nx && VIEW.t ? 'Пройди этот шаг, и кнопка откроется' : !nx ? 'Следующие уроки откроет педагог' : '';
   return `<div class="kr-gnav"><button class="kr-btn kr-gb" data-k="nav-b" ${back ? '' : 'disabled'} aria-label="Назад">‹</button><button class="kr-btn pri kr-go" data-k="nav-f" ${nx ? '' : 'disabled'} aria-label="Вперёд"><b>Вперёд →</b><small>${nx ? E(nx.label) : E(wait)}</small></button></div>`;
 }
 function navSync() { const g = box && $('.kr-gnav', box); if (g) g.outerHTML = navHtml(); }
 function navBack() {
   if (CARD && CARD.c > 0 && VIEW.t === CARD.tid) { CARD.go(-1); return; }
-  if (NAV.i > 0) { NAV.i--; navShow(NAV.h[NAV.i].d); } else if (!navUp()) return;
-  scrollTop();
+  NAV.quick = true;
+  try { if (NAV.i > 0) { NAV.i--; navShow(NAV.h[NAV.i].d); } else if (!navUp()) return; } finally { NAV.quick = false; }
+  scrollTop(true);
 }
 function navFwd() {
   const n = navNext(); if (!n) return;
   if (n.card) { CARD.go(1); return; }
-  if (n.les) { const tid = LESN.tid, m = modOf(tid), k = m.tasks.indexOf(tid), nx = m.tasks[k + 1]; stepOk(tid, LESN.i, {}); if (nx && taskOpen(m, k + 1)) taskView(nx); else modView(m.id); if (window.tabFx && !RED) window.tabFx(box, 1, false); scrollTop(); return; }
-  if (n.r) { NAV.i++; navShow(NAV.h[NAV.i].d); } else if (n.t) taskView(n.t, n.s); else if (n.m) modView(n.m);
+  if (n.les) { const tid = LESN.tid, m = modOf(tid), k = m.tasks.indexOf(tid), nx = m.tasks[k + 1], nm = K.mods[K.mods.indexOf(m) + 1]; stepOk(tid, LESN.i, {}); if (nx && taskOpen(m, k + 1)) taskView(nx); else if (!nx && nm && nm.tasks && nm.tasks.length && modOpen(nm)) taskView(nm.tasks[0]); else home(); if (window.tabFx && !RED) window.tabFx(box, 1, false); scrollTop(); return; }
+  if (n.r) { NAV.i++; navShow(NAV.h[NAV.i].d); } else if (n.t) taskView(n.t, n.s); else if (n.m || n.home) home();
   if (window.tabFx && !RED) window.tabFx(box, 1, false);
   scrollTop();
 }
-function scrollTop() {
+function scrollTop(now) {
   const nav = document.querySelector(CFG.bar || '#vtb'), off = (nav ? Math.max(0, nav.getBoundingClientRect().bottom) : 0) + 10, r = box.getBoundingClientRect();
-  if (Math.abs(r.top - off) > 30) window.scrollTo({ top: scrollY + r.top - off, behavior: RED ? 'auto' : 'smooth' });
+  if (Math.abs(r.top - off) > 30) window.scrollTo({ top: scrollY + r.top - off, behavior: RED || now ? 'auto' : 'smooth' });
 }
 
 /* путь новичка: коротко, как идти по курсу. Раскрыт, пока не нажали "Понятно" */
 function pathCard() {
   let seen = false; try { seen = localStorage.getItem('st_path_seen') === '1'; } catch (e) {}
   return `<details class="kr-card kr-novice" ${seen ? '' : 'open'}><summary><b>🧭 Путь новичка</b><small>как проходить курс</small></summary>
-  <ol><li><b>Настрой гитару</b> - кнопка 🎯 внизу справа.</li><li><b>Иди по модулям по порядку.</b> В модуле - короткий материал, тренажёры со звуком, урок и проверка.</li><li><b>Жми большую кнопку "Вперёд"</b> внизу, она сама ведёт дальше.</li><li><b>В уроке отмечай ✓</b>, что уже получается. Не выходит - сбавь темп.</li></ol>
-  <p class="mut">Модули 0-3 - гитара: бой, перебор, аккорды и ноты. Модули 4-6 - музыка с нейросетями и свой трек. Как устроены ноты, октава и 12 звуков - в разделе "Теория" (меню ☰ Ещё).</p>
+  <ol><li><b>Настрой гитару</b> - кнопка 🎯 внизу справа.</li><li><b>Иди по урокам по порядку.</b> В уроке сначала сам урок: аккорды, бой или перебор со звуком. Потом задания к нему: тренажёры и короткая проверка.</li><li><b>Жми большую кнопку "Вперёд"</b> внизу, она сама ведёт дальше.</li><li><b>В уроке отмечай ✓</b>, что уже получается. Не выходит - сбавь темп.</li></ol>
+  <p class="mut">Часть 1 - гитара, часть 2 - музыка с нейросетями и свой трек. Как устроены ноты, октава и 12 звуков - в разделе "Теория" (меню ☰ Ещё).</p>
   <button class="kr-btn pri sm" data-k="path-ok">Понятно</button></details>`;
 }
 /* руководство тестера (бета 2): раскрыто, пока не нажали "Понятно" */
@@ -440,20 +489,25 @@ function betaGuide() {
 function home() {
   if (isCoach() && !CO.as) { if (CO.st === 'idle') coLoad(); else coDraw(); return; }
   VIEW = { m: null, t: null, step: null };
-  const live = K.mods.filter(m => m.tasks), tot = live.reduce((a, m) => a + m.tasks.length, 0), dn = live.reduce((a, m) => a + m.tasks.filter(taskDone).length, 0);
-  const go = contTarget();
-  let h = (isCoach() ? '' : pathCard()) + (go ? `<button class="kr-btn pri kr-cont" data-k="task" data-t="${go.tid}"><span>${go.st ? '▶ Продолжить' : '▶ Начать'}: Модуль ${go.m.n} · "${E(K.lib[go.tid].t)}"</span><small>шаг ${go.st + 1} из ${K.lib[go.tid].steps.length}</small></button>` : '');
-  h += `<div class="kr-card top">${bugBtn()}<h3>🎓 Твой прогресс</h3><p class="mut">Внутри модуля шаги открываются сами. Следующий модуль открывает тренер, когда проверит задания.</p>
-    <div class="kr-bar"><i data-w="${tot ? dn / tot * 100 : 0}"></i></div><div class="kr-row"><span>Пройдено заданий: ${dn} из ${tot}</span><span>⭐ ${allPts()} очков</span></div>${viewRow()}</div>`;
-  h += (CFG.note ? `<div class="kr-note">${E(CFG.note)}</div>` : BETA ? betaGuide() : `<div class="kr-note">🧪 Пробная версия: наполнены все модули (${live.length}), они открыты для проверки. В каждом модуле 3 уровня сложности (по классу).</div>`) + `${isCoach() ? '<div class="kr-back"><button class="kr-btn sm pri" data-k="co-home">👥 К ученикам (окно тренера)</button><span class="mut">Вы тренер: здесь курс глазами ученика, всё открыто.</span></div>' : ''}`;
-  h += '<div class="kr-mods">' + K.mods.map((m, i) => {
-    const op = modOpen(m), p = modProg(m), full = p === 1;
-    const st = !m.tasks ? '🛠 готовится' : full ? '✓ модуль пройден' + (S.t[m.tasks[m.tasks.length - 1]] ? '' : '') : op ? '▶ ' + Math.round(p * 100) + '% пройдено' : '🔒 откроет тренер';
-    return `<button class="kr-m ${op && !full ? 'on' : ''} ${!op ? 'lock' : ''}" data-k="mod" data-m="${m.id}" style="animation-delay:${i * 60}ms"><span class="e">${m.e}</span><span class="nn">МОДУЛЬ ${m.n}</span><b>${E(m.t)}</b><small>${E(m.sub)}</small>
-      ${m.tasks ? `<div class="kr-bar"><i data-w="${p * 100}"></i></div>` : ''}<div class="st">${st}</div></button>`;
+  const go = contTarget(), ed = window.LES && LES.canEdit(), me = meK();
+  const doneL = LSN.filter(L => lsnItems(L).every(taskDone)).length;
+  let h = isCoach() ? '' : pathCard();
+  /* вход: ученик - по коду (заявка в разделе "Рейтинг"), педагог - по PIN */
+  h += `<div class="kr-entry">${me ? `<span>👤 ${E(me.first || 'Ученик')}${me.cls ? ', ' + E(me.cls) + ' кл.' : ''}: ты вошёл, прогресс идёт в рейтинг студии</span>` : `<button class="kr-btn sm" data-k="go-rate">👤 Ученик: войти по коду или подать заявку</button>`}
+    ${ed ? `<span class="kr-ed">👩‍🏫 Вы вошли как педагог: в каждом уроке есть кнопки настройки</span><button class="kr-btn sm" data-k="co-role">👥 Ученики и их прогресс</button><button class="kr-btn sm" data-k="t-out">Выйти</button>` : `<button class="kr-btn sm" data-k="t-in">👩‍🏫 Я педагог: вход по PIN</button>`}</div>`;
+  if (go) { const L = lsnOf(go.tid); h += `<button class="kr-btn pri kr-cont" data-k="task" data-t="${go.tid}"><span>${S.t[go.tid] || doneL ? '▶ Продолжить' : '▶ Начать'}: Урок ${L ? lsnNo(L) : ''} · ${E(L ? L.t : K.lib[go.tid].t)}</span><small>${L && go.tid !== L.tid ? E(K.lib[go.tid].t) : 'с самого урока'}</small></button>`; }
+  h += `<div class="kr-sum"><span>Пройдено уроков: <b>${doneL}</b> из ${LSN.length}</span><span>⭐ ${allPts()} очков</span>${CFG.author ? `<span class="kr-author">${E(CFG.author)} <a href="#" data-usl role="button">Условия использования</a></span>` : ''}</div>`;
+  let part = '';
+  h += '<div class="kr-lsn">' + LSN.map((L, i) => {
+    const m = mOf(L.mod), its = lsnItems(L), dn = its.filter(taskDone).length, full = dn === its.length;
+    const prev = LSN[i - 1], mopen = modOpen(m), op = isCoach() || teach() || (mopen && taskOpen(m, m.tasks.indexOf(L.tid)) && (!prev || taskDone(prev.tid) || dn > 0));
+    const pt = +L.mod.slice(1) >= 4 ? 'Часть 2. Музыка с нейросетями' : 'Часть 1. Гитара';
+    const head = pt !== part ? `<div class="kr-part">${(part = pt)}</div>` : '';
+    const st = full ? '✓ пройден' : !mopen ? '🔒 откроет педагог' : !op ? '🔒 после прошлого урока' : dn ? `${dn} из ${its.length}` : 'можно начинать';
+    return head + `<button class="kr-l ${full ? 'ok' : ''} ${op ? '' : 'lock'} ${go && its.includes(go.tid) ? 'cur' : ''}" data-k="task" data-t="${L.tid}" ${op ? '' : 'disabled'} style="animation-delay:${Math.min(i, 12) * 35}ms">
+      <span class="n">${full ? '✓' : i + 1}</span><span class="tx"><b>${E(L.t)}</b><small>${E(L.sub)}</small>${its.length > 1 ? `<i class="kr-lb"><i style="width:${Math.round(dn / its.length * 100)}%"></i></i>` : ''}</span><span class="st">${st}</span></button>`;
   }).join('') + '</div>';
-  if (CFG.role && !isCoach()) h += '<div class="kr-back"><button class="kr-btn sm" data-k="co-role">👥 Я тренер</button><span class="mut">Окно тренера: ученики и их прогресс, вход по PIN.</span></div>';
-  mount(h); bars();
+  mount(h);
 }
 /* куда вернуться: первое незаконченное открытое задание (пропущенные - в конце) */
 function contTarget() {
@@ -470,6 +524,7 @@ function contTarget() {
 function bars() { requestAnimationFrame(() => requestAnimationFrame(() => $$('.kr-bar i[data-w]', box).forEach(i => i.style.width = i.dataset.w + '%'))); }
 
 function modView(id) {
+  return home();
   const m = K.mods.find(x => x.id === id); if (!m) return home();
   VIEW = { m: id, t: null, step: null };
   let h = `<div class="kr-back"><button class="kr-btn sm" data-k="home">← Все модули</button>${bugBtn()}</div>
@@ -516,8 +571,9 @@ function taskView(tid, step) {
 /* шапка задания: шаги, счётчик, пропуск. Обновляется на месте после каждого пройденного шага */
 function taskHead(tid, step) {
   const L = K.lib[tid], t = T(tid), m = modOf(tid);
-  return `<div class="kr-back"><button class="kr-btn sm" data-k="mod" data-m="${m.id}">← Модуль ${m.n}</button>${t.done ? '<span class="mut kr-dn" style="margin-left:auto">✓ пройдено</span>' : t.skip ? '<span class="mut" style="margin-left:auto">⏭ пропущено</span>' : `<button class="kr-btn sm" style="margin-left:auto" data-k="skip" data-t="${tid}">⏭ Пропустить</button>`}${bugBtn()}</div>
-    <div class="kr-card top"><span style="float:right;font-size:30px">${L.e}</span><div class="mut kr-where">Модуль ${m.n} · задание ${m.tasks.indexOf(tid) + 1} из ${m.tasks.length}</div><h3>${E(L.t)}</h3><p class="mut">${E(L.sub)}</p>
+  const Ls = lsnOf(tid), isL = Ls && Ls.tid === tid, pos = Ls ? Ls.tasks.indexOf(tid) : -1;
+  return `<div class="kr-back">${isL || !Ls ? '<button class="kr-btn sm" data-k="home">← Все уроки</button>' : `<button class="kr-btn sm" data-k="task" data-t="${Ls.tid}">← Урок ${lsnNo(Ls)}</button>`}${t.done ? '<span class="mut kr-dn" style="margin-left:auto">✓ пройдено</span>' : t.skip ? '<span class="mut" style="margin-left:auto">⏭ пропущено</span>' : `<button class="kr-btn sm" style="margin-left:auto" data-k="skip" data-t="${tid}">⏭ Пропустить</button>`}${bugBtn()}</div>
+    <div class="kr-card top"><span style="float:right;font-size:30px">${L.e}</span><div class="mut kr-where">${!Ls ? '' : isL ? `Урок ${lsnNo(Ls)} из ${LSN.length}` : `Урок ${lsnNo(Ls)} · задание ${pos + 1} из ${Ls.tasks.length}`}</div><h3>${E(L.t)}</h3><p class="mut">${E(L.sub)}</p>
     ${L.les ? '' : `<div class="kr-path">${L.steps.map((st, i) => { const ok = t.s[i] && t.s[i].ok, can = i === 0 || (t.s[i - 1] && t.s[i - 1].ok) || ok || isCoach();
       return `<button data-k="step" data-i="${i}" class="${i === step ? 'on' : ''} ${ok ? 'ok' : ''}" ${can ? '' : 'disabled'} title="Шаг ${i + 1}: ${E(stepName(st))}"><i>${ok ? '✓' : i + 1}</i><span>${E(stepName(st))}</span></button>`; }).join('')}
       <button data-k="step" data-i="-1" class="${step === -1 ? 'on' : ''} ${t.done ? 'ok' : ''}" ${t.done ? '' : 'disabled'} title="Итог задания"><i>🏁</i><span>Итог</span></button></div>`}</div>`;
@@ -574,6 +630,11 @@ function runStep(tid, i, stg) {
 function lessonStep(tid, i, st, stg) {
   stg.classList.add('kr-les');
   if (!window.LES || !LES.render(stg, st.l)) { if (!window.LES) stg.innerHTML = '<p class="mut">Урок не загрузился. Обнови страницу.</p>'; }
+  const L = lsnOf(tid);
+  if (L && L.tasks.length) {
+    const m = modOf(tid);
+    stg.insertAdjacentHTML('beforeend', `<div class="kr-ltasks"><div class="kr-sec">Задания к уроку: тренажёры и проверка</div><div class="kr-road">${L.tasks.map((x, j) => { const T0 = K.lib[x], d = taskDone(x), op = taskOpen(m, m.tasks.indexOf(x)); return `<button class="kr-t ${d ? 'ok' : ''} ${op ? '' : 'lock'}" data-k="task" data-t="${x}" ${op ? '' : 'disabled'}><span class="d">${d ? '✓' : j + 1}</span><span class="e">${T0.e}</span><span style="min-width:0"><b>${E(T0.t)}</b><small>${E(T0.sub)}</small></span>${op ? '' : '🔒'}</button>`; }).join('')}</div><p class="mut" style="font-size:13px;margin-top:8px">Задания открываются по порядку. Жми "Вперёд" - урок отметится, и начнётся первое задание.</p></div>`);
+  }
   LESN = { tid, i }; navSync();
 }
 
@@ -1648,7 +1709,7 @@ body.kr-on .hero{display:none}
 .kr-lmore{width:100%;min-height:44px;padding:8px 14px;border-radius:14px;border:1px dashed rgba(127,127,160,.4);background:none;color:inherit;opacity:.75;font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer;text-align:left}
 @media (max-width:380px){.kr-lvr{flex-wrap:wrap}.kr-lvs.sm{flex-basis:100%}}
 /* плавающие кнопки других скриптов во вкладке Курс не закрывают задания */
-body.kr-on #toSchool,body.kr-on .spkbug{display:none !important}
+body.kr-on #toSchool{display:none !important}body.kr-on .spkbug{bottom:calc(92px + env(safe-area-inset-bottom,0px))}body.kr-on .spkbp{bottom:calc(130px + env(safe-area-inset-bottom,0px))}
 body.kr-on #toast{bottom:calc(86px + env(safe-area-inset-bottom,0px)) !important}
 body.kr-co #ahero,body.kr-co #pnBeta{display:none !important}
 #krUndo{position:fixed;left:50%;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:9500;display:flex;align-items:center;gap:10px;width:min(92vw,460px);padding:8px 8px 8px 14px;border-radius:16px;background:rgb(16,18,40);border:1px solid rgba(34,197,94,.55);color:#e5e7eb;font:600 14px/1.3 system-ui,sans-serif;box-shadow:0 14px 30px -10px rgba(0,0,0,.8);transform:translate(-50%,24px);opacity:0;pointer-events:none;transition:transform .25s,opacity .25s;overflow:hidden}
@@ -1876,7 +1937,7 @@ document.addEventListener('submit', e => {
    Выбор хранится на устройстве (kursy_fx, kursy_big). CFG.fx: 'game' - "как в игре" по умолчанию, CFG.view: false - без переключателя.
    Если в системе включено "уменьшить движение" - всегда спокойно. */
 const lsG = k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, lsS = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
-let FXM = lsG('kursy_fx') || CFG.fx || 'calm', BIG = lsG('kursy_big') === '1', STREAK = 0;
+let FXM = CFG.view === false ? 'calm' : (lsG('kursy_fx') || CFG.fx || 'calm'), BIG = lsG('kursy_big') === '1', STREAK = 0;
 function fxGame() { return FXM === 'game' && !RED; }
 function fxApply() { const B = document.body.classList; B.toggle('kfx-game', fxGame()); B.toggle('kfx-big', BIG); }
 function fxSet(v) {
@@ -2044,6 +2105,9 @@ document.addEventListener('click', e => {
   else if (k === 'lockmore') { ROADALL[b.dataset.m] = 1; modView(b.dataset.m); }
   else if (k === 'lvl') { S.lvl[b.dataset.m] = +b.dataset.v; save(); snd('tap'); modView(b.dataset.m); toastK('Уровень: ' + lvInfo(+b.dataset.v).t); }
   else if (k === 'fb') { const t = T(b.dataset.t), ta = document.getElementById('fb-' + b.dataset.t), v = ta ? ta.value.replace(/\s+/g, ' ').trim().slice(0, 140) : ''; t.fb = v; save(); b.textContent = v ? '✓ Отправлено, изменить' : 'Отправить тренеру'; snd('tap'); toastK(v ? 'Спасибо! Тренер увидит комментарий' : 'Комментарий убран'); }
+  else if (k === 'go-rate') { if (typeof show === 'function') show('rate'); window.scrollTo({ top: 0 }); }
+  else if (k === 't-in') { if (window.LES) LES.login(); }
+  else if (k === 't-out') { try { sessionStorage.removeItem('spectr_sess'); sessionStorage.removeItem('vz_spk_tok'); } catch (e) {} location.reload(); }
   else if (k === 'path-ok') { try { localStorage.setItem('st_path_seen', '1'); } catch (e) {} const d = b.closest('details'); if (d) d.open = false; }
   else if (k === 'beta-ok') { try { localStorage.setItem('vz_beta2_seen', '1'); } catch (e) {} const d = b.closest('details'); if (d) d.open = false; window.scrollTo({ top: Math.max(0, (box.getBoundingClientRect().top + scrollY) - 70), behavior: 'smooth' }); }
   else if (k === 'like') { const t = T(b.dataset.t), v = +b.dataset.v; t.like = t.like === v ? 0 : v; save(); $$('.kr-like button', box).forEach(z => z.classList.toggle('on', +z.dataset.v === t.like)); snd('tap'); if (t.like) toastK(v > 0 ? 'Спасибо! 👍 Тренер увидит' : 'Спасибо! Тренер поправит задание'); }

@@ -233,6 +233,7 @@ html.fx header{background:rgba(12,7,22,.95)}
 .mnu-g button.zk b::after{content:" 🔒";font-size:12px}
 @media(max-width:860px){.mnb{order:2}.mnb b{display:none}}
 </style>
+<style>#dock{bottom:calc(50px + env(safe-area-inset-bottom)) !important}body.kr-on #dock{bottom:calc(130px + env(safe-area-inset-bottom)) !important}</style>
 </head>
 <body>
 <header><div class="wrap top">
@@ -702,8 +703,8 @@ window.ZAK_DEF = ['kai'];
   const _show=window.show;if(typeof _show==='function')window.show=show=function(t){_show(t);if(t==='rate')load()};
   if(location.hash==='#rate')load(true);
 })();</script>
-<script src="oshibka.js" data-site="studio" defer></script>
-<script src="put.js" data-site="studio" defer></script><script>window.KURSY={name:'Гитара и ИИ',org:'ИИ-студия',club:'studio',api:'https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b',store:'st_kurs',meKey:'spk_studio',open:['m0','m1'],beta:0,note:'🧪 Курс в тестировании: счётчик очков может обнуляться. Сейчас открыты модули 0 и 1, следующие откроет педагог.',grp:' студии',words:[['Тренер','Педагог'],['тренер','педагог'],['ТРЕНЕР','ПЕДАГОГ']],pinText:'Нужен PIN портала СПЕКТР (тот же, что для заявок).',bar:'header',tabs:'#tbt',role:'st_role',rate:true,pause:20};window.SPK_RESET=function(){try{localStorage.removeItem('studio_prog')}catch(e){}try{ST.got=[];ST.best=0;ST.ear=0;ST.rh=0}catch(e){}};const MODE=(()=>{try{return sessionStorage.getItem('st_role')==='coach'?'coach':'public'}catch(e){return 'public'}})();</script><script src="kurs-zadaniya.js" defer></script><script src="kurs-igry2.js" defer></script><script src="kurs-moduli6.js" defer></script>
+<script src="oshibka2.js" data-site="studio" defer></script>
+<script src="put.js" data-site="studio" defer></script><script>window.KURSY={view:false,name:'Гитара и ИИ',org:'ИИ-студия',club:'studio',api:'https://functions.yandexcloud.net/d4e4vhndceg7scc0mh3b',store:'st_kurs',meKey:'spk_studio',open:['m0','m1'],beta:0,note:'🧪 Курс в тестировании: счётчик очков может обнуляться. Сейчас открыты модули 0 и 1, следующие откроет педагог.',grp:' студии',words:[['Тренер','Педагог'],['тренер','педагог'],['ТРЕНЕР','ПЕДАГОГ']],pinText:'Нужен PIN портала СПЕКТР (тот же, что для заявок).',bar:'header',tabs:'#tbt',role:'st_role',rate:true,pause:20};window.SPK_RESET=function(){try{localStorage.removeItem('studio_prog')}catch(e){}try{ST.got=[];ST.best=0;ST.ear=0;ST.rh=0}catch(e){}};const MODE=(()=>{try{return sessionStorage.getItem('st_role')==='coach'?'coach':'public'}catch(e){return 'public'}})();</script><script src="kurs-zadaniya.js" defer></script><script src="kurs-igry2.js" defer></script><script src="kurs-moduli6.js" defer></script>
 <script>if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});</script>
 </body>
 </html>
