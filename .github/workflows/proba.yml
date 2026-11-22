@@ -1,0 +1,43 @@
+# Пробная версия на GitHub Pages: https://centrspektr.github.io/studio/proba/new.html
+# Собирается из этой ветки при каждом её изменении. Остальной сайт - те же страницы-переходы на GitVerse,
+# что делает pereadresaciya.yml. В GitVerse проба не попадает (зеркало копирует только main).
+# После переноса в main этот файл удалить.
+name: Проба на GitHub Pages
+
+on:
+  push:
+    branches: [claude/project-thread-letn3j]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Страницы-переходы, как в main
+        env:
+          NEW_SITE: https://centrspektr.gitverse.site
+        run: bash .github/pereadresaciya.sh
+      - name: Пробная версия в proba/
+        run: |
+          mkdir -p _site/proba
+          rsync -a --exclude .git --exclude .github --exclude _site ./ _site/proba/
+          touch _site/proba/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
