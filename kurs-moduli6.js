@@ -34,7 +34,8 @@ const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch
 const T = id => (S.t[id] = S.t[id] || { s: {} });
 const stepSt = (id, i) => { const t = T(id); return (t.s[i] = t.s[i] || {}); };
 const taskDone = id => !!(S.t[id] && S.t[id].done);
-function taskOpen(m, k) { const p = S.t[m.tasks[k - 1]]; return isCoach() || k === 0 || taskDone(m.tasks[k - 1]) || !!(p && (p.was || p.skip)); }
+/* уже начатое или пройденное задание открыто всегда (например, если перед ним позже встал новый урок) */
+function taskOpen(m, k) { const p = S.t[m.tasks[k - 1]], me = S.t[m.tasks[k]]; return isCoach() || k === 0 || taskDone(m.tasks[k]) || !!(me && me.s && Object.keys(me.s).some(i => me.s[i] && me.s[i].ok)) || taskDone(m.tasks[k - 1]) || !!(p && (p.was || p.skip)); }
 function modOpen(m) { return !!m.tasks && (isCoach() || PREVIEW_OPEN.includes(m.id) || (S.open || []).includes(m.id)); }
 function modProg(m) { if (!m.tasks) return 0; return m.tasks.filter(taskDone).length / m.tasks.length; }
 /* очки задания = pts x средний лучший результат проверок задания (доп. задания очков не дают) */
@@ -257,8 +258,8 @@ css.textContent = `
 .kr-wait{display:flex;gap:10px;align-items:center;padding:12px;border-radius:14px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.45);font-size:14px}
 .kr-hist{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px;font-size:13px}
 .kr-hist li{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(127,127,160,.08)}
-.kr-card.kr-path{display:block}.kr-path summary{display:flex;gap:10px;align-items:baseline;cursor:pointer;list-style:none}.kr-path summary::-webkit-details-marker{display:none}.kr-path summary small{color:var(--dim);font-weight:700}
-.kr-path ol{margin:10px 0 8px 20px;display:grid;gap:6px}.kr-path .mut{font-size:13.5px;margin-bottom:10px}
+.kr-card.kr-novice{display:block}.kr-novice summary{display:flex;gap:10px;align-items:baseline;cursor:pointer;list-style:none}.kr-novice summary::-webkit-details-marker{display:none}.kr-novice summary small{color:var(--dim);font-weight:700}
+.kr-novice ol{margin:10px 0 8px 20px;display:grid;gap:6px}.kr-novice .mut{font-size:13.5px;margin-bottom:10px}
 .kr-les{padding:14px}.kr-les .card{box-shadow:none}
 /* тренажёры */
 .kg-stack{display:flex;gap:10px;justify-content:center;align-items:flex-end;min-height:150px;padding:10px;flex-wrap:wrap}
@@ -417,7 +418,7 @@ function scrollTop() {
 /* путь новичка: коротко, как идти по курсу. Раскрыт, пока не нажали "Понятно" */
 function pathCard() {
   let seen = false; try { seen = localStorage.getItem('st_path_seen') === '1'; } catch (e) {}
-  return `<details class="kr-card kr-path" ${seen ? '' : 'open'}><summary><b>🧭 Путь новичка</b><small>как проходить курс</small></summary>
+  return `<details class="kr-card kr-novice" ${seen ? '' : 'open'}><summary><b>🧭 Путь новичка</b><small>как проходить курс</small></summary>
   <ol><li><b>Настрой гитару</b> - кнопка 🎯 внизу справа.</li><li><b>Иди по модулям по порядку.</b> В модуле - короткий материал, тренажёры со звуком, урок и проверка.</li><li><b>Жми большую кнопку "Вперёд"</b> внизу, она сама ведёт дальше.</li><li><b>В уроке отмечай ✓</b>, что уже получается. Не выходит - сбавь темп.</li></ol>
   <p class="mut">Модули 0-3 - гитара: бой, перебор, аккорды и ноты. Модули 4-6 - музыка с нейросетями и свой трек. Как устроены ноты, октава и 12 звуков - в разделе "Теория" (меню ☰ Ещё).</p>
   <button class="kr-btn pri sm" data-k="path-ok">Понятно</button></details>`;
@@ -517,9 +518,9 @@ function taskHead(tid, step) {
   const L = K.lib[tid], t = T(tid), m = modOf(tid);
   return `<div class="kr-back"><button class="kr-btn sm" data-k="mod" data-m="${m.id}">← Модуль ${m.n}</button>${t.done ? '<span class="mut kr-dn" style="margin-left:auto">✓ пройдено</span>' : t.skip ? '<span class="mut" style="margin-left:auto">⏭ пропущено</span>' : `<button class="kr-btn sm" style="margin-left:auto" data-k="skip" data-t="${tid}">⏭ Пропустить</button>`}${bugBtn()}</div>
     <div class="kr-card top"><span style="float:right;font-size:30px">${L.e}</span><div class="mut kr-where">Модуль ${m.n} · задание ${m.tasks.indexOf(tid) + 1} из ${m.tasks.length}</div><h3>${E(L.t)}</h3><p class="mut">${E(L.sub)}</p>
-    <div class="kr-path">${L.steps.map((st, i) => { const ok = t.s[i] && t.s[i].ok, can = i === 0 || (t.s[i - 1] && t.s[i - 1].ok) || ok || isCoach();
+    ${L.les ? '' : `<div class="kr-path">${L.steps.map((st, i) => { const ok = t.s[i] && t.s[i].ok, can = i === 0 || (t.s[i - 1] && t.s[i - 1].ok) || ok || isCoach();
       return `<button data-k="step" data-i="${i}" class="${i === step ? 'on' : ''} ${ok ? 'ok' : ''}" ${can ? '' : 'disabled'} title="Шаг ${i + 1}: ${E(stepName(st))}"><i>${ok ? '✓' : i + 1}</i><span>${E(stepName(st))}</span></button>`; }).join('')}
-      <button data-k="step" data-i="-1" class="${step === -1 ? 'on' : ''} ${t.done ? 'ok' : ''}" ${t.done ? '' : 'disabled'} title="Итог задания"><i>🏁</i><span>Итог</span></button></div></div>`;
+      <button data-k="step" data-i="-1" class="${step === -1 ? 'on' : ''} ${t.done ? 'ok' : ''}" ${t.done ? '' : 'disabled'} title="Итог задания"><i>🏁</i><span>Итог</span></button></div>`}</div>`;
 }
 function headSync() { const h = box && VIEW.t && $('#krHead', box); if (h) h.innerHTML = taskHead(VIEW.t, VIEW.step); navSync(); }
 function stepName(st) { if (st.name) return st.name; return { cards: 'Материал', game: 'Тренажёр', quiz: 'Проверка', fly: 'Полёт', coach: 'С тренером' }[st.s] || st.s; }

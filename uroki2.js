@@ -830,7 +830,7 @@ function piano(m, when, vol) {
   o1.start(t); o2.start(t); o1.stop(t + 1.7); o2.stop(t + 1.7);
 }
 const K_LO = 40, K_HI = 76;                    // от ми большой октавы (6-я струна) до ми второй (1-я струна, 12-й лад)
-let kSel = -1, kTm = [];
+let kSel = -1, kTm = [], kFrom = '';
 function initKeys() {
   const kw = $('#kbW'), kf = $('#kfW'); if (!kw) return;
   const WK = 30, white = []; for (let m = K_LO; m <= K_HI; m++) if (!BLK(m % 12)) white.push(m);
@@ -854,12 +854,15 @@ function initKeys() {
     kf.innerHTML = g + '</svg>';
     kf.querySelectorAll('.fp').forEach(x => x.onclick = () => pick(+x.dataset.m, 'g'));
   };
-  const mark = () => { kw.querySelectorAll('.kk').forEach(k => { const m = +k.dataset.m, r = k.querySelector('rect'), on = m === kSel, oc = kSel >= 0 && m !== kSel && m % 12 === kSel % 12; r.setAttribute('fill', on ? '#ff2d8a' : oc ? '#facc15' : BLK(m % 12) ? '#1a1030' : '#f4eefe'); }); fret(); };
+  /* на телефоне пианино и гриф прокручиваются: подводим к выбранной ноте */
+  const seen = (wrap, el) => { if (!el) return; const r = el.getBoundingClientRect(), W = wrap.getBoundingClientRect(); if (r.left < W.left + 10 || r.right > W.right - 10) wrap.scrollTo({ left: wrap.scrollLeft + r.left - W.left - W.width / 2 + r.width / 2, behavior: 'smooth' }); };
+  const focus = () => { if (kSel < 0) return; seen(kw, kw.querySelector(`.kk[data-m="${kSel}"]`)); const fs = [...kf.querySelectorAll('.fp')].filter(g => +g.dataset.m === kSel); if (fs.length && kFrom !== 'g') seen(kf, fs[fs.length - 1]); };
+  const mark = () => { kw.querySelectorAll('.kk').forEach(k => { const m = +k.dataset.m, r = k.querySelector('rect'), on = m === kSel, oc = kSel >= 0 && m !== kSel && m % 12 === kSel % 12; r.setAttribute('fill', on ? '#ff2d8a' : oc ? '#facc15' : BLK(m % 12) ? '#1a1030' : '#f4eefe'); }); fret(); focus(); };
   const say1 = m => { const pc = m % 12, n = []; for (let i = 0; i < 6; i++) { const f = m - OM[5 - i]; if (f >= 0 && f <= 12) n.push((6 - (5 - i)) + '-я стр. ' + (f ? f + '-й лад' : 'открытая')); }
     $('#kbO').innerHTML = `<span style="color:var(--pk)">${RUS12[pc]} (${LAT12[pc]})</span> ${OCTN(m)}${BLK(pc) ? ' · чёрная клавиша: ' + RUS12[pc] + ' = ' + RUS12[(pc + 1) % 12] + '♭'.replace('♯♭', '') : ''}<br><small class="muted">На гитаре: ${n.join(', ') || 'нет в первых 12 ладах'}</small>`; };
-  function pick(m, from) { kSel = m; if (from === 'g') pluck(hz(m), 0, .45); else piano(m, 0, .3); mark(); say1(m); }
+  function pick(m, from) { kSel = m; kFrom = from; if (from === 'g') pluck(hz(m), 0, .45); else piano(m, 0, .3); mark(); say1(m); }
   kw.querySelectorAll('.kk').forEach(k => k.onclick = () => pick(+k.dataset.m, 'k'));
-  const seq = (list, gap, show) => { kTm.forEach(clearTimeout); kTm = []; list.forEach((m, i) => kTm.push(setTimeout(() => { kSel = m; (show && show[i] === 'g' ? pluck(hz(m), 0, .45) : piano(m, 0, .3)); mark(); say1(m); }, i * gap))); };
+  const seq = (list, gap, show) => { kTm.forEach(clearTimeout); kTm = []; list.forEach((m, i) => kTm.push(setTimeout(() => { kSel = m; kFrom = ''; (show && show[i] === 'g' ? pluck(hz(m), 0, .45) : piano(m, 0, .3)); mark(); say1(m); }, i * gap))); };
   $$('#t-ref [data-kd]').forEach(b => b.onclick = () => {
     const d = b.dataset.kd;
     if (d === 'oct') { seq([48, 60, 48, 60], 700); setTimeout(() => $('#kbO').insertAdjacentHTML('beforeend', '<br><small>До малой и до первой октавы: одна нота, верхняя звучит вдвое выше.</small>'), 2200); }
